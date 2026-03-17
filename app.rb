@@ -19,10 +19,18 @@ set :bind, '0.0.0.0'
 
 require 'pg'
 
-# Render上の環境変数 DATABASE_URL があればそれを使い、なければローカルの設定を使う
-db_url = ENV['DATABASE_URL'] || { host: "localhost", dbname: "campuscore" }
+# 1. 接続情報を取得
+db_url = ENV['DATABASE_URL']
 
-client = PG.connect(db_url)
+if db_url
+  # --- Render（本番環境）の場合 ---
+  # DATABASE_URLの末尾に sslmode=require を強制的に付与して接続します
+  # これをしないと、データの書き込み（Signup）時に拒否されることがあります
+  client = PG.connect("#{db_url}?sslmode=require")
+else
+  # --- ローカル環境の場合 ---
+  client = PG.connect(host: "localhost", dbname: "campuscore")
+end
 
 require 'bcrypt'
 
