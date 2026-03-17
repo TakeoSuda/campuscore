@@ -1,0 +1,155 @@
+<form action="/mypage_edit" method="post">
+
+    <div>
+    <input type="text" name="name_kana" placeholder="名前(フリガナ)" value="<%= @user["name_kana"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="name" placeholder="名前" value="<%= @user["name"] %>">
+    </div>
+
+    <div>
+    <input type="email" name="email" placeholder="メールアドレス" value="<%= @user["email"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="school" placeholder="学校名" value="<%= @user["school"] %>">
+    </div>
+
+    <div>
+    <label for="grade">学年</label>
+    <select name="grade" id="grade" required>
+        <option value="">-- 選択してください --</option>
+        <option value="中3" <%= "selected" if @user["grade"] == "中3" %>>中3</option>
+        <option value="高1" <%= "selected" if @user["grade"] == "高1" %>>高1</option>
+        <option value="高2" <%= "selected" if @user["grade"] == "高2" %>>高2</option>
+        <option value="高3" <%= "selected" if @user["grade"] == "高3" %>>高3</option>
+        <option value="総" <%= "selected" if @user["grade"] == "総" %>>総</option>
+    </select>
+    </div>
+
+    <div>
+    <p>パスワード（変更する場合のみ入力）</p>
+    <input type="password" name="password" placeholder="新しいパスワードを入力">
+    </div>
+
+    <div>
+    <p>パスワード（確認用）</p>
+    <input type="password" name="password_confirm" placeholder="もう一度入力">
+    </div>
+
+    <div>
+    <input type="text" name="desired_school" placeholder="第1志望校" value="<%= @user["desired_school"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="faculty" placeholder="学部" value="<%= @user["faculty"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="department" placeholder="学科" value="<%= @user["department"] %>">
+    </div>
+
+        <div>
+    <input type="text" name="second_desired_school" placeholder="第2志望校" value="<%= @user["second_desired_school"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="second_desired_faculty" placeholder="学部" value="<%= @user["second_desired_faculty"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="second_desired_department" placeholder="学科" value="<%= @user["second_desired_department"] %>">
+    </div>
+
+    <div>
+    <label for="target_ct_reading">共通テスト英語R目標点</label>
+    <input type="number" name="target_ct_reading" placeholder="英語R目標点" value="<%= @user["target_ct_reading"] %>">
+    <label for="target_ct_listening">共通テスト英語L目標点</label>
+    <input type="number" name="target_ct_listening" placeholder="英語L目標点" value="<%= @user["target_ct_listening"] %>">
+    </div>
+
+    <div>
+    <label for="last_ct_reading">前回の英語R得点（総合科生のみ）</label>
+    <input type="number" name="last_ct_reading" placeholder="前回の英語R得点" value="<%= @user["last_ct_reading"] %>">
+    <label for="last_ct_listening">前回の英語L得点（総合科生のみ）</label>
+    <input type="number" name="last_ct_listening" placeholder="前回の英語L得点" value="<%= @user["last_ct_listening"] %>">
+    </div>
+
+    <div>
+    <label for="eiken_level">英検取得済級</label>
+    <select name="eiken_level" id="eiken_level" required>
+        <option value="">-- 選択してください --</option>
+        <option value="1級" <%= "selected" if @user["eiken_level"] == "1級" %>>1級</option>
+        <option value="準1級" <%= "selected" if @user["eiken_level"] == "準1級" %>>準1級</option>
+        <option value="2級" <%= "selected" if @user["eiken_level"] == "2級" %>>2級</option>
+        <option value="準2級プラス" <%= "selected" if @user["eiken_level"] == "準2級プラス" %>>準2級プラス</option>
+        <option value="準2級" <%= "selected" if @user["eiken_level"] == "準2級" %>>準2級</option>
+        <option value="3級" <%= "selected" if @user["eiken_level"] == "3級" %>>3級</option>
+    </select>
+    </div>
+    
+    <div>
+    <label for="desired_eiken_level">英検で取得したい級</label>
+    <select name="desired_eiken_level" id="desired_eiken_level" required>
+        <option value="">-- 選択してください --</option>
+        <option value="1級" <%= "selected" if @user["desired_eiken_level"] == "1級" %>>1級</option>
+        <option value="準1級" <%= "selected" if @user["desired_eiken_level"] == "準1級" %>>準1級</option>
+        <option value="2級" <%= "selected" if @user["desired_eiken_level"] == "2級" %>>2級</option>
+        <option value="準2級プラス" <%= "selected" if @user["desired_eiken_level"] == "準2級プラス" %>>準2級プラス</option>
+        <option value="準2級" <%= "selected" if @user["desired_eiken_level"] == "準2級" %>>準2級</option>
+        <option value="3級" <%= "selected" if @user["desired_eiken_level"] == "3級" %>>3級</option>
+    </select>
+    </div>
+
+    <div>
+    <input type="text" name="strong_subject" placeholder="得意科目" value="<%= @user["strong_subject"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="weak_subject" placeholder="不得意科目" value="<%= @user["weak_subject"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="hobby" placeholder="趣味" value="<%= @user["hobby"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="club" placeholder="部活" value="<%= @user["club"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="desired_job" placeholder="将来つきたい職業" value="<%= @user["desired_job"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="dream" placeholder="将来の夢" value="<%= @user["dream"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="resolution" placeholder="今年の抱負" value="<%= @user["resolution"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="consult" placeholder="相談したいこと" value="<%= @user["consult"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="worry" placeholder="今の心配事" value="<%= @user["worry"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="request_for_class" placeholder="授業に対する要望" value="<%= @user["request_for_class"] %>">
+    </div>
+
+    <div>
+        <label>推薦入試を考えているかどうか</label><br>
+        <input type="radio" name="recommend_exam" value="true" <%= "checked" if @user["recommend_exam"] == "true" %>> Yes
+        <input type="radio" name="recommend_exam" value="false" <%= "checked" if @user["recommend_exam"] == "false" %>> No
+    </div>
+
+    <div>
+    <input type="submit" value="更新">
+    </div>
+</form>
+

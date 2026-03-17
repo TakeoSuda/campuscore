@@ -1,0 +1,63 @@
+<h2><%= session[:user]["name"] %>さんへの診断結果</h2>
+
+<div>
+  <p>現在のレベル： 
+    単語Lv.<%= @w_lv %>
+    <%= case @w_lv
+  when 1 then '☆'
+  when 2 then '☆☆'
+  when 3 then '☆☆☆'
+  when 4 then '☆☆☆☆'
+  when 5 then '☆☆☆☆☆'
+  end %>
+ / 文法Lv.<%= @g_lv %>
+ <%= case @g_lv
+  when 1 then '☆'
+  when 2 then '☆☆'
+  when 3 then '☆☆☆'
+  when 4 then '☆☆☆☆'
+  when 5 then '☆☆☆☆☆'
+  end %> / 読解Lv.<%= @r_lv %>
+  <%= case @r_lv
+  when 1 then '☆'
+  when 2 then '☆☆'
+  when 3 then '☆☆☆'
+  when 4 then '☆☆☆☆'
+  when 5 then '☆☆☆☆☆'
+  end %>
+  </p>
+</div>
+
+<h3>あなたにぴったりの参考書</h3>
+
+<% if @recommended_books.empty? %>
+  <p>該当する参考書がまだ登録されていません。</p>
+<% else %>
+  <% @recommended_books.each do |book| %> 
+<div> 
+<h4><%= book['title'] %></h4> 
+<p>カテゴリー:
+<strong>
+<%= case book['category']
+   when 'word' then '単語'
+   when 'grammar' then '文法'
+   when 'reading' then '読解'
+   end %>
+</strong>
+</p>
+<p>レベル: <%= book['level'] %>
+<%= case book['level'].to_i
+  when 1 then '☆'
+  when 2 then '☆☆'
+  when 3 then '☆☆☆'
+  when 4 then '☆☆☆☆'
+  when 5 then '☆☆☆☆☆'
+  end %>
+</p> 
+<p><%= book['description'] %></p> 
+</div> 
+  <% end %>
+
+<% end %>
+
+<a href="/recommends">診断をやり直す</a>

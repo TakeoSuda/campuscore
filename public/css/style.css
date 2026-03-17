@@ -1,0 +1,281 @@
+/* base settings */
+:root {
+  --primary-color: #1111d4;
+  --primary-dark: #0a0a85;
+  --primary-light: #e7e7fb;
+  --text-main: #1a1a1a;
+  --text-gray: #666666;
+  --bg-gray: #f9fafb;
+  --radius: 1rem;
+}
+
+body {
+  font-family: 'Lexend', 'sans-serif', "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+  color: var(--text-main);
+  background-color: #ffffff;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Header & Navigation */
+header {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #eeeeee;
+  padding: 1rem 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: var(--text-gray);
+  font-weight: 500;
+  margin-left: 1.5rem;
+  transition: color 0.3s;
+}
+
+.nav-links a:hover {
+  color: var(--primary-color);
+}
+
+/* Brand Logo Area */
+h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+/* Main Content Area */
+main {
+  max-width: 1000px;
+  margin: 3rem auto;
+  padding: 0 1.5rem;
+}
+
+/* Form Styles (診断ページなどで使用) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2rem;
+  background: white;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(17, 17, 212, 0.05);
+}
+
+th, td {
+  padding: 1.2rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+th {
+  background-color: var(--bg-gray);
+  text-align: left;
+  font-weight: 600;
+}
+
+/* Button Styles */
+button, .btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+button:hover, .btn:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(17, 17, 212, 0.2);
+}
+
+/* Card Styles (おすすめ表示用) */
+.card {
+  background: white;
+  border: 1px solid #f0f0f0;
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  transition: transform 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+
+/* マイページ全体のコンテナ */
+.mypage-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* ナビゲーションカードのグリッド */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.nav-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  text-align: center;
+  text-decoration: none;
+  color: var(--text-main);
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary-color);
+  box-shadow: 0 10px 20px rgba(17, 17, 212, 0.1);
+}
+
+.nav-card .icon {
+  font-size: 2rem;
+}
+
+.nav-card h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.primary-card {
+  background-color: var(--primary-light);
+  border-color: var(--primary-color);
+}
+
+/* プロフィールセクション */
+.profile-section {
+  background: white;
+  padding: 2rem;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--bg-gray);
+  padding-bottom: 1rem;
+}
+
+.profile-group {
+  margin-bottom: 2rem;
+}
+
+.profile-group h3 {
+  color: var(--primary-color);
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+/* 情報テーブルの装飾 */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.info-table th {
+  width: 30%;
+  background-color: var(--bg-gray);
+  color: var(--text-gray);
+  font-size: 0.9rem;
+  padding: 0.8rem;
+  border: 1px solid #f0f0f0;
+}
+
+.info-table td {
+  padding: 0.8rem;
+  border: 1px solid #f0f0f0;
+  font-weight: 500;
+}
+
+/* メモ風のグリッド（抱負や夢など） */
+.memo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.memo-item {
+  background: var(--bg-gray);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.memo-item strong {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--primary-color);
+  margin-bottom: 0.3rem;
+}
+
+/* 編集ボタン（枠線のみ） */
+.btn-outline {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.btn-outline:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* 前回のCSSに追加してください */
+
+.memo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2カラム */
+  gap: 1rem;
+}
+
+/* 抱負や要望など、横幅いっぱいに広げたい項目用 */
+.memo-item.full-width {
+  grid-column: span 2;
+}
+
+/* スマホ表示の時は1カラムにする */
+@media (max-width: 600px) {
+  .memo-grid {
+    grid-template-columns: 1fr;
+  }
+  .memo-item.full-width {
+    grid-column: span 1;
+  }
+  .info-table th {
+    width: 40%;
+    font-size: 0.8rem;
+  }
+}
+
+.profile-group h3 {
+  border-left: 4px solid var(--primary-color);
+  padding-left: 10px;
+  margin-top: 2.5rem;
+}

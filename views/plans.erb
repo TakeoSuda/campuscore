@@ -1,0 +1,29 @@
+<h1>合格計画一覧</h1>
+<div>
+<a href="/plan_new">合格計画を追加する</a>
+</div>
+<% @plans.each do |plan| %>
+  <div>
+    <h3><%= plan["subject"] %></h3>
+    <p>教材: <%= plan["material"] %></p>
+    <p>開始日: <%= plan["start_date"] %></p>
+    <p>終了日: <%= plan["end_date"] %></p>
+    <p>何周するか: <%= plan["laps"] %></p>
+    <p>何周したか: <%= plan["completed_laps"] %></p>
+    <p>目的: <%= plan["purpose"] %></p>
+    <p>進み具合: <% if plan["status"] == "in_progress" %>
+      進行中
+    <% elsif plan["status"] == "not_started" %>
+      未開始
+    <% else %>
+      完了
+    <% end %>
+    </p>
+    <a href="/plans/<%= plan["id"] %>/edit">この合格計画を編集する</a>
+  </div>
+<% end %>
+<div>
+<a href="/plan_new">合格計画を追加する</a>
+</div>
+
+

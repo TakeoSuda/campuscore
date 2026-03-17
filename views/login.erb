@@ -1,0 +1,17 @@
+<form action="/login" method="post">
+<% if @error %>
+<p style="color:red;"><%= @error %></p>
+<% end %>
+    <div>
+    <input type="email" name="email" placeholder="メールアドレス">
+    </div>
+
+    <div>
+    <input type="password" name="password" placeholder="パスワード">
+    </div>
+    <div>
+    <input type="submit" value="ログイン">
+    </div>
+</form>
+
+

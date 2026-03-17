@@ -1,0 +1,44 @@
+<% if @error %>
+<p style="color:red;"><%= @error %></p>
+<% end %>
+<form action="/signup" method="post">
+
+    <div>
+    <input type="text" name="name_kana" placeholder="名前(フリガナ)">
+    </div>
+
+    <div>
+    <input type="text" name="name" placeholder="名前">
+    </div>
+
+    <div>
+    <input type="email" name="email" placeholder="メールアドレス">
+    </div>
+
+    <div>
+    <input type="text" name="school" placeholder="学校名">
+    </div>
+
+    <div>
+    <label for="grade">学年</label>
+    <select name="grade" id="grade" required>
+        <option value="">-- 選択してください --</option>
+        <option value="中3">中3</option>
+        <option value="高1">高1</option>
+        <option value="高2">高2</option>
+        <option value="高3">高3</option>
+        <option value="総">総</option>
+    </select>
+    </div>
+
+    <div>
+    <input type="password" name="password" placeholder="パスワード">
+    </div>
+    <div>
+    <input type="password" name="password_confirm" placeholder="パスワード(確認)">
+    </div>
+    <div>
+    <input type="submit" value="新規登録">
+    </div>
+</form>
+

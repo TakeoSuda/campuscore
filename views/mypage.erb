@@ -1,0 +1,91 @@
+<div class="mypage-container">
+  
+  <section class="action-grid">
+    <a href="/plan_new" class="nav-card">
+      <div class="icon">📅</div>
+      <h3>合格計画を立てる</h3>
+    </a>
+    <a href="/plans" class="nav-card">
+      <div class="icon">🔍</div>
+      <h3>合格計画を見る</h3>
+    </a>
+    <a href="/recommends" class="nav-card">
+      <div class="icon">📚</div>
+      <h3>英語力診断をして、オススメ参考書を見る</h3>
+    </a>
+    <a href="/diary" class="nav-card">
+      <div class="icon">📝</div>
+      <h3>勉強日記を書く</h3>
+    </a>
+    <a href="/consults" class="nav-card">
+      <div class="icon">👥</div>
+      <h3>面談記録</h3>
+    </a>
+    <a href="/chat_rooms" class="nav-card">
+      <div class="icon">💬</div>
+      <h3>チャットルーム一覧</h3>
+    </a>
+    <a href="/chat_rooms/new" class="nav-card accent-card">
+      <div class="icon">➕</div>
+      <h3>チャットルームを作る</h3>
+    </a>
+    <a href="/mypage_edit" class="nav-card primary-card">
+      <div class="icon">⚙️</div>
+      <h3>マイプロフィールを編集する</h3>
+    </a>
+  </section>
+
+  <section class="profile-section">
+    <div class="section-header">
+      <h2>マイプロフィール</h2>
+      <a href="/mypage_edit" class="btn-outline">編集する</a>
+    </div>
+
+    <div class="profile-group">
+      <h3>基本情報</h3>
+      <table class="info-table">
+        <tr><th>名前（ふりがな）</th><td><%= @user["name"] %> (<%= @user["name_kana"] %>)</td></tr>
+        <tr><th>メールアドレス</th><td><%= @user["email"] %></td></tr>
+        <tr><th>学校・学年</th><td><%= @user["school"] %> / <%= @user["grade"] %></td></tr>
+      </table>
+    </div>
+
+    <div class="profile-group">
+      <h3>志望校・検定・目標点</h3>
+      <table class="info-table">
+        <tr><th>第一志望校</th><td><%= @user["desired_school"] %> (<%= @user["faculty"] %>学部 <%= @user["department"] %>学科)</td></tr>
+        <tr><th>第二志望校</th><td><%= @user["second_desired_school"] %> (<%= @user["second_desired_faculty"] %>学部 <%= @user["second_desired_department"] %>学科)</td></tr>
+        <tr><th>共通テスト目標</th><td>Reading: <%= @user["target_ct_reading"] %>点 / Listening: <%= @user["target_ct_listening"] %>点</td></tr>
+        <tr><th>前回の共テ得点</th><td>Reading: <%= @user["last_ct_reading"] %>点 / Listening: <%= @user["last_ct_listening"] %>点</td></tr>
+        <tr><th>英検（取得/目標）</th><td>取得済み: <%= @user["eiken_level"] %> / 目標: <%= @user["desired_eiken_level"] %></td></tr>
+        <tr><th>推薦入試</th><td><%= @user["recommend_exam"] == "t" ? "考えている" : "考えていない" %></td></tr>
+      </table>
+    </div>
+
+    <div class="profile-group">
+      <h3>パーソナルデータ</h3>
+      <div class="memo-grid">
+        <div class="memo-item"><strong>得意科目</strong><p><%= @user["strong_subject"] %></p></div>
+        <div class="memo-item"><strong>不得意科目</strong><p><%= @user["weak_subject"] %></p></div>
+        <div class="memo-item"><strong>趣味</strong><p><%= @user["hobby"] %></p></div>
+        <div class="memo-item"><strong>部活</strong><p><%= @user["club"] %></p></div>
+        <div class="memo-item"><strong>将来つきたい職業</strong><p><%= @user["desired_job"] %></p></div>
+        <div class="memo-item"><strong>将来の夢</strong><p><%= @user["dream"] %></p></div>
+        <div class="memo-item full-width"><strong>今年の抱負</strong><p><%= @user["resolution"] %></p></div>
+      </div>
+    </div>
+
+    <div class="profile-group">
+      <h3>相談・要望</h3>
+      <div class="memo-grid">
+        <div class="memo-item"><strong>相談したいこと</strong><p><%= @user["consult"] %></p></div>
+        <div class="memo-item"><strong>今の心配事</strong><p><%= @user["worry"] %></p></div>
+        <div class="memo-item full-width"><strong>授業に対する要望</strong><p><%= @user["request_for_class"] %></p></div>
+      </div>
+    </div>
+
+    <div style="margin-top: 2rem; text-align: center;">
+      <a href="/mypage_edit" class="btn">全ての情報を編集する</a>
+    </div>
+  </section>
+</div>

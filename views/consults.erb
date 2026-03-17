@@ -1,0 +1,21 @@
+<h1>面談記録</h1>
+<form action="/consults/new" method="post">
+<div>
+<input type="date" name="date" placeholder="面談日">
+<textarea name="content" rows="4" cols="50" placeholder="面談内容"></textarea>
+<input type="submit" value="保存">
+</div>
+</form>
+
+<% @consults.each do |consult| %>
+<div>
+<p>面談日：<%= consult["date"] %></p>
+<p>面談内容：<%= consult["content"] %></p>
+</div>
+<% end %>
+
+<div>
+<a href="/mypage">マイページに戻る</a>
+</div>
+
+

@@ -1,0 +1,19 @@
+<h1>勉強日記</h1>
+<form action="/diary/new" method="post">
+<div>
+<input type="date" name="date" placeholder="日付">
+<textarea name="content" rows="4" cols="50" placeholder="内容"></textarea>
+<input type="submit" value="保存">
+</div>
+</form>
+
+<% @diary_entries.each do |entry| %>
+<div>
+<p>日付：<%= entry["date"] %></p>
+<p>内容：<%= entry["content"] %></p>
+</div>
+<% end %>
+
+<div>
+<a href="/mypage">マイページに戻る</a>
+</div>

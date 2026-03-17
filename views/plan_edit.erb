@@ -1,0 +1,40 @@
+<form action="/plans/<%= @plan["id"] %>/edit" method="post">
+    <input type="text" name="subject" placeholder="教科" value="<%= @plan["subject"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="material" placeholder="教材" value="<%= @plan["material"] %>">
+    </div>
+
+    <div>
+    <input type="date" name="start_date" placeholder="開始日" value="<%= @plan["start_date"] %>">
+    </div>
+
+    <div>
+    <input type="date" name="end_date" placeholder="終了日" value="<%= @plan["end_date"] %>">
+    </div>
+
+    <div>
+    <input type="integer" name="laps" placeholder="何周するか" value="<%= @plan["laps"] %>">
+    </div>
+
+    <div>
+    <input type="integer" name="completed_laps" placeholder="何周したか" value="<%= @plan["completed_laps"] %>">
+    </div>
+
+    <div>
+    <input type="text" name="purpose" placeholder="目的" value="<%= @plan["purpose"] %>">
+    </div>
+
+     <div>
+        <label>進み具合</label><br>
+        <input type="radio" name="status" value="in_progress" <%= "checked" if @plan["status"] == "in_progress" %>> 進行中
+        <input type="radio" name="status" value="not_started" <%= "checked" if @plan["status"] == "not_started" %>> 未開始
+        <input type="radio" name="status" value="completed" <%= "checked" if @plan["status"] == "completed" %>> 完了
+    </div>
+
+    <div>
+    <input type="submit" value="更新">
+    </div>
+</form>
+

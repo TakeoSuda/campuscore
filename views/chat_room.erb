@@ -1,0 +1,13 @@
+<h1><%= @chat_room["name"] || "チャットルーム##{@chat_room["id"]}" %></h1>
+
+<div id="messages">
+  <% @messages.each do |msg| %>
+    <p><strong><%= msg["name"] %>:</strong> <%= msg["content"] %> <small><%= msg["created_at"] %></small></p>
+  <% end %>
+</div>
+
+<form action="/chat_rooms/<%= @chat_room["id"] %>/messages" method="post">
+  <input type="text" name="content" placeholder="メッセージを入力">
+  <input type="submit" value="送信">
+</form>
+

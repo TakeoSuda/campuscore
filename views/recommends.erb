@@ -1,0 +1,25 @@
+<h2>英語力診断</h2>
+<p>現在の自分のレベルを選択してください（1: 初級 〜 5: 上級）</p>
+
+<form action="/recommends" method="post">
+<table>
+    <tr>
+      <th>分野</th>
+      <th>レベル選択</th>
+    </tr>
+    <% ['word', 'grammar', 'reading'].each do |category| %>
+      <tr>
+        <td><%= category == 'word' ? '単語' : (category == 'grammar' ? '文法' : '読解') %></td>
+        <td>
+          <% (1..5).each do |i| %>
+            <input type="radio" name="<%= category %>_level" value="<%= i %>" id="<%= category %>_<%= i %>" required>
+            <label for="<%= category %>_<%= i %>"><%= i %></label>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+</table>
+
+  <button type="submit">診断しておすすめを見る</button>
+</form>
+

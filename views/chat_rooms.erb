@@ -1,0 +1,7 @@
+<h1>チャットルーム一覧</h1>
+<ul>
+  <% @chat_rooms.each do |room| %>
+    <li><a href="/chat_rooms/<%= room["id"] %>"><%= room["name"] || "個別チャット##{room["id"]}" %></a></li>
+  <% end %>
+</ul>
+
