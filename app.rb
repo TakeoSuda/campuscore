@@ -26,6 +26,12 @@ client = PG.connect(db_url)
 
 require 'bcrypt'
 
+
+get '/' do
+  # views/index.erb を探しに行きます
+  erb :index
+end
+
 # ユーザー登録・ログイン関係
 get '/signup' do
   erb :signup
