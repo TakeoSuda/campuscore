@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config date="1772389096885" transient="false">
+	<site updateable="true" url="platform:/base/" enabled="true" policy="USER-EXCLUDE">
+		<feature id="org.jkiss.dbeaver.standalone.feature" version="26.0.0.202603011816" url="features/org.jkiss.dbeaver.standalone.feature_26.0.0.202603011816/" plugin-identifier="org.jkiss.dbeaver.ui.app.standalone">
+		</feature>
+		<feature id="org.eclipse.equinox.p2.core.feature" version="1.7.900.v20251124-1504" url="features/org.eclipse.equinox.p2.core.feature_1.7.900.v20251124-1504/">
+		</feature>
+		<feature id="org.eclipse.e4.rcp" version="4.38.0.v20251126-0427" url="features/org.eclipse.e4.rcp_4.38.0.v20251126-0427/">
+		</feature>
+		<feature id="org.jkiss.dbeaver.db.ui.feature" version="1.0.165.202603011816" url="features/org.jkiss.dbeaver.db.ui.feature_1.0.165.202603011816/">
+		</feature>
+		<feature id="org.eclipse.rcp" version="4.38.0.v20251201-0920" url="features/org.eclipse.rcp_4.38.0.v20251201-0920/">
+		</feature>
+		<feature id="org.jkiss.dbeaver.db.feature" version="1.0.165.202603011816" url="features/org.jkiss.dbeaver.db.feature_1.0.165.202603011816/">
+		</feature>
+		<feature id="org.jkiss.dbeaver.ui.extra.feature" version="26.0.0.202603011816" url="features/org.jkiss.dbeaver.ui.extra.feature_26.0.0.202603011816/">
+		</feature>
+		<feature id="org.jkiss.dbeaver.ui.feature" version="26.0.0.202603011816" url="features/org.jkiss.dbeaver.ui.feature_26.0.0.202603011816/">
+		</feature>
+		<feature id="org.eclipse.equinox.p2.discovery.feature" version="1.3.900.v20250616-0711" url="features/org.eclipse.equinox.p2.discovery.feature_1.3.900.v20250616-0711/">
+		</feature>
+		<feature id="org.jkiss.dbeaver.app.base.feature" version="26.0.0.202603011816" url="features/org.jkiss.dbeaver.app.base.feature_26.0.0.202603011816/" plugin-identifier="org.jkiss.dbeaver.ui.app.standalone">
+		</feature>
+		<feature id="org.jkiss.dbeaver.app.local.feature" version="26.0.0.202603011816" url="features/org.jkiss.dbeaver.app.local.feature_26.0.0.202603011816/">
+		</feature>
+		<feature id="org.jkiss.dbeaver.rcp.feature" version="3.0.53.202603011816" url="features/org.jkiss.dbeaver.rcp.feature_3.0.53.202603011816/">
+		</feature>
+		<feature id="org.jkiss.dbeaver.runtime.feature" version="26.0.0.202603011816" url="features/org.jkiss.dbeaver.runtime.feature_26.0.0.202603011816/" plugin-identifier="org.jkiss.dbeaver.model">
+		</feature>
+		<feature id="org.jkiss.dbeaver.ce.feature" version="26.0.0.202603011816" url="features/org.jkiss.dbeaver.ce.feature_26.0.0.202603011816/" plugin-identifier="org.jkiss.dbeaver.ui.app.standalone">
+		</feature>
+		<feature id="org.eclipse.equinox.p2.extras.feature" version="1.4.3000.v20251124-1504" url="features/org.eclipse.equinox.p2.extras.feature_1.4.3000.v20251124-1504/">
+		</feature>
+	</site>
+</config>

@@ -5,6 +5,12 @@ enable :sessions
 require 'sinatra/reloader'
 require 'sinatra/cookies'
 
+# Renderの環境変数 PORT を受け取り、なければ 10000 を使う
+set :port, ENV['PORT'] || 10000
+
+# 重要: '0.0.0.0' にしないと外部（Renderのルーター）からアクセスできません
+set :bind, '0.0.0.0'
+
 require 'pg'
 
 # Render上の環境変数 DATABASE_URL があればそれを使い、なければローカルの設定を使う

@@ -1,0 +1,33 @@
+Manifest-Version: 1.0
+Created-By: Maven Archiver 3.6.5
+Java-Version: 17
+Build-Jdk-Spec: 21
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: org.jkiss.bundle.sshj
+Bundle-Version: 0.34.2
+Bundle-Name: org.jkiss.bundle.sshj
+Bundle-Vendor: DBeaver Corp
+Bundle-ActivationPolicy: lazy
+Eclipse-BundleShape: dir
+Bundle-ClassPath: lib/asn-one-0.6.0.jar,lib/sshj-0.40.0.jar
+Export-Package: net.schmizz.concurrent,net.schmizz.keepalive,net.schmizz
+ .sshj,net.schmizz.sshj.common,net.schmizz.sshj.connection,net.schmizz.s
+ shj.connection.channel,net.schmizz.sshj.connection.channel.direct,net.s
+ chmizz.sshj.connection.channel.forwarded,net.schmizz.sshj.sftp,net.schm
+ izz.sshj.signature,net.schmizz.sshj.transport,net.schmizz.sshj.transpor
+ t.cipher,net.schmizz.sshj.transport.compression,net.schmizz.sshj.transp
+ ort.digest,net.schmizz.sshj.transport.kex,net.schmizz.sshj.transport.ma
+ c,net.schmizz.sshj.transport.random,net.schmizz.sshj.transport.verifica
+ tion,net.schmizz.sshj.userauth,net.schmizz.sshj.userauth.keyprovider,ne
+ t.schmizz.sshj.userauth.method,net.schmizz.sshj.userauth.password,net.s
+ chmizz.sshj.xfer,net.schmizz.sshj.xfer.scp
+Import-Package: org.slf4j,org.bouncycastle.openssl,org.bouncycastle.open
+ ssl.bc,org.bouncycastle.openssl.jcajce,org.bouncycastle.jce.provider,or
+ g.bouncycastle.jce.spec,org.bouncycastle.asn1,org.bouncycastle.asn1.nis
+ t,org.bouncycastle.asn1.x9,org.bouncycastle.asn1.sec,org.bouncycastle.a
+ sn1.x509,org.bouncycastle.math.ec,org.bouncycastle.crypto.ec,org.bouncy
+ castle.crypto.params,org.bouncycastle.crypto.generators,org.bouncycastl
+ e.crypto.prng,org.bouncycastle.asn1.pkcs,org.bouncycastle.pkcs,org.boun
+ cycastle.operator,org.bouncycastle.util.encoders
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+

@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Created-By: Maven Archiver 3.6.5
+Java-Version: 17
+Build-Jdk-Spec: 21
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: org.jkiss.bundle.jfreechart
+Bundle-Version: 1.5.7
+Bundle-Name: org.jkiss.bundle.jfreechart
+Bundle-Vendor: DBeaver Corp
+Bundle-ActivationPolicy: lazy
+Eclipse-BundleShape: dir
+Bundle-ClassPath: lib/jfreechart-1.5.3.jar
+Import-Package: org.eclipse.swt,org.eclipse.swt.events,org.eclipse.swt.g
+ raphics,org.eclipse.swt.layout,org.eclipse.swt.printing,org.eclipse.swt
+ .widgets
+Export-Package: org.jfree.chart,org.jfree.chart.annotations,org.jfree.ch
+ art.axis,org.jfree.chart.block,org.jfree.chart.date,org.jfree.chart.edi
+ tor,org.jfree.chart.encoders,org.jfree.chart.entity,org.jfree.chart.eve
+ nt,org.jfree.chart.labels,org.jfree.chart.swt,org.jfree.chart.swt.edito
+ r,org.jfree.chart.panel,org.jfree.chart.plot,org.jfree.chart.renderer,o
+ rg.jfree.chart.renderer.category,org.jfree.chart.renderer.xy,org.jfree.
+ chart.title,org.jfree.chart.ui,org.jfree.chart.util,org.jfree.data,org.
+ jfree.data.category,org.jfree.data.function,org.jfree.data.gantt,org.jf
+ ree.data.general,org.jfree.data.statistics,org.jfree.data.time,org.jfre
+ e.data.xml,org.jfree.data.xy,org.jfree.swt,org.jfree.ui,org.jfree.util
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+

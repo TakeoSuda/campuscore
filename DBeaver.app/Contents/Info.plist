@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>CFBundleExecutable</key>
+    <string>dbeaver</string>
+    <key>CFBundleGetInfoString</key>
+    <string>Universal Database Manager and SQL client.</string>
+    <key>CFBundleIconFile</key>
+    <string>dbeaver.icns</string>
+    <key>CFBundleIdentifier</key>
+    <string>org.jkiss.dbeaver.core.product</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>DBeaver Community</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>26.0.0</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleVersion</key>
+    <string>26.0.0</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>English</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+      <string>en</string>
+    </array>
+    <key>CFBundleDisplayName</key>
+    <string>DBeaver Community</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleTypeRole</key>
+        <string>Editor</string>
+        <key>CFBundleTypeIconFile</key>
+        <string>@packageName@.icns</string>
+        <key>CFBundleTypeExtensions</key>
+        <array>
+          <string>sql</string>
+        </array>
+        <key>CFBundleTypeName</key>
+        <string>SQL file</string>
+        <key>CFBundleTypeOSTypes</key>
+        <array>
+          <string>****</string>
+        </array>
+        <key>CFBundleTypeMIMETypes</key>
+        <string>application/octet-stream</string>
+      </dict>
+      <dict>
+        <key>CFBundleTypeRole</key>
+        <string>Editor</string>
+        <key>CFBundleTypeIconFile</key>
+        <string>@packageName@.icns</string>
+        <key>CFBundleTypeExtensions</key>
+        <array>
+          <string>db</string>
+          <string>sqlite</string>
+          <string>sqlite3</string>
+        </array>
+        <key>CFBundleTypeName</key>
+        <string>SQLite database file</string>
+        <key>CFBundleTypeOSTypes</key>
+        <array>
+          <string>****</string>
+        </array>
+        <key>CFBundleTypeMIMETypes</key>
+        <string>application/octet-stream</string>
+      </dict>
+    </array>
+    <key>NSRequiresAquaSystemAppearance</key>
+    <true></true>
+    <key>NSHighResolutionCapable</key>
+    <true></true>
+    <key>NSSupportsAutomaticGraphicsSwitching</key>
+    <true></true>
+    <key>NSCameraUsageDescription</key>
+    <string>An application in DBeaver requests access to the device's camera.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>An application in DBeaver requests access to the device's microphone.</string>
+    <key>NSLocationUsageDescription</key>
+    <string>An application in DBeaver requests access to the user's location information.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>An application in DBeaver requests access to the user's Desktop folder.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>An application in DBeaver requests access to the user's Documents folder.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>An application in DBeaver requests access to the user's Downloads folder.</string>
+    <key>NSNetworkVolumesUsageDescription</key>
+    <string>An application in DBeaver requests access to files on a network volume.</string>
+    <key>NSRemovableVolumesUsageDescription</key>
+    <string>An application in DBeaver requests access to files on a removable volume.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>An application in DBeaver requests access to Bluetooth.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>An application in DBeaver requests the ability to send Apple events.</string>
+  </dict>
+</plist>
+

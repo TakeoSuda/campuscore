@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+        id="org.jkiss.dbeaver.standalone.feature"
+        label="DBeaver Standalone"
+        version="26.0.0.202603011816"
+        provider-name="DBeaver Corp"
+        plugin="org.jkiss.dbeaver.ui.app.standalone">
+
+    <copyright>DBeaver Corp and others</copyright>
+    <license url="https://dbeaver.io/product/dbeaver_license.txt"/>
+
+    <includes id="org.jkiss.dbeaver.app.base.feature" version="26.0.0.202603011816"/>
+
+    <!-- Additional plugins for standalone version -->
+    <plugin id="org.jkiss.dbeaver.ui.config.sample" version="1.0.211.202603011816" />
+
+    <!-- P2 for RCP -->
+    <!-- Do not include p2.rcp as we don't need auto-update and scheduler -->
+    <includes id="org.eclipse.equinox.p2.core.feature" version="1.7.900.v20251124-1504"/>
+    <plugin id="org.eclipse.equinox.p2.ui" version="2.8.1000.v20251111-1030" />
+    <plugin id="org.eclipse.equinox.p2.ui.sdk" version="1.3.500.v20250521-0421" />
+    <plugin id="org.eclipse.equinox.security.ui" version="1.4.700.v20251111-0659" />
+
+    <plugin id="org.eclipse.equinox.p2.updatesite" version="1.3.800.v20250606-0550" />
+    <plugin id="org.eclipse.equinox.p2.ui.importexport" version="1.4.900.v20251111-0726" />
+
+    <includes id="org.eclipse.equinox.p2.discovery.feature" version="1.3.900.v20250616-0711"/>
+    <includes id="org.eclipse.equinox.p2.extras.feature" version="1.4.3000.v20251124-1504"/>
+
+
+</feature>
