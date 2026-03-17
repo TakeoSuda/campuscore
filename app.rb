@@ -6,10 +6,11 @@ require 'sinatra/reloader'
 require 'sinatra/cookies'
 
 require 'pg'
-client = PG.connect(
-  host: "localhost",
-  dbname: "campuscore"
-)
+
+# Render上の環境変数 DATABASE_URL があればそれを使い、なければローカルの設定を使う
+db_url = ENV['DATABASE_URL'] || { host: "localhost", dbname: "campuscore" }
+
+client = PG.connect(db_url)
 
 require 'bcrypt'
 
