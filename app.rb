@@ -2,7 +2,13 @@ require 'sinatra'
 
 enable :sessions
 
-require 'sinatra/reloader'
+# ❌ 修正前: 常に読み込もうとしてエラーになる
+# require 'sinatra/reloader'
+
+# ✅ 修正後: 開発環境（development）の時だけ読み込む
+if development?
+  require 'sinatra/reloader'
+end
 require 'sinatra/cookies'
 
 # Renderの環境変数 PORT を受け取り、なければ 10000 を使う
