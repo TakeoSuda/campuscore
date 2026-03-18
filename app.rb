@@ -169,6 +169,9 @@ end
   @resolution = params[:resolution]
   @consult = params[:consult]
   @worry = params[:worry]
+  #追加項目
+  @request_for_class = params[:request_for_class]
+
   # 文字列として受け取る
   recommend_exam_param = params[:recommend_exam]
 
@@ -176,8 +179,8 @@ end
   @recommend_exam = recommend_exam_param == "true"
 
   client.exec_params(
-    "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, school=$5, grade=$6, desired_school=$7, faculty=$8, department=$9, second_desired_school=$10, second_desired_faculty=$11, second_desired_department=$12, target_ct_reading=$13, target_ct_listening=$14, last_ct_reading=$15, last_ct_listening=$16, eiken_level=$17, desired_eiken_level=$18, strong_subject=$19, weak_subject=$20, hobby=$21, club=$22, desired_job=$23, dream=$24, resolution=$25, consult=$26, worry=$27, recommend_exam=$28 WHERE id=$29",
-    [@name_kana, @name, @email, @password, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, user_id]
+    "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, school=$5, grade=$6, desired_school=$7, faculty=$8, department=$9, second_desired_school=$10, second_desired_faculty=$11, second_desired_department=$12, target_ct_reading=$13, target_ct_listening=$14, last_ct_reading=$15, last_ct_listening=$16, eiken_level=$17, desired_eiken_level=$18, strong_subject=$19, weak_subject=$20, hobby=$21, club=$22, desired_job=$23, dream=$24, resolution=$25, consult=$26, worry=$27, recommend_exam=$28, request_for_class=$29 WHERE id=$30",
+    [@name_kana, @name, @email, @password, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, @request_for_class, user_id]
   )
 
   redirect '/mypage'
