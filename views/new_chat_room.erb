@@ -1,7 +1,7 @@
-<h1>チャット開始</h1>
+<h1>質問開始</h1>
 
 <form action="/chat_rooms" method="post">
-  <label for="user_id">チャット相手を選択：</label>
+  <label for="user_id">質問相手を選択：</label>
   <select name="user_id" id="user_id" required>
     <option value="">-- 選択してください --</option>
     <% @users.each do |user| %>
@@ -9,5 +9,5 @@
     <% end %>
   </select>
 
-  <input type="submit" value="チャット開始">
+  <input type="submit" value="質問開始">
 </form>

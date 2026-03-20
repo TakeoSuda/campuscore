@@ -8,22 +8,64 @@
     <link rel="stylesheet" href="/css/style.css">
   </head>
   <body>
-    <header>
-      <div class="logo">
-        <h1>CampusCore</h1>
-      </div>
-      <nav class="nav-links">
+        <!-- ヘッダー -->
+    <header class="header">
+
+        <div class="logo"><h1><a href="/mypage" style="text-decoration: none; color: #1111d4;">CampusCore</a></h1></div>
+
+        <!-- PC用メニュー -->
+        <nav class="pc-menu">
         <% if session[:user] %>
-          <a href="/mypage">マイページ</a>
-          <a href="/logout" style="color: #e11d48;">ログアウト</a> <% else %>
-          <a href="/login">ログイン</a>
+        <a href="/mypage">マイページ</a>
+        <a href="/plans">学習計画</a>
+<%#         <a href="/chat_rooms">質問一覧</a>
+        <a href="/chat_rooms/new">質問をする</a> %>
+        <a href="/diary">勉強日記</a>
+        <a href="/consults">面談記録</a>
+        <a href="/recommends">おすすめ参考書</a>
+        <a href="/recommends_list">英語参考書の良書一覧</a>
+        <a href="/logout">ログアウト</a>
         <% end %>
-      </nav>
+        </nav>
+
+        <!-- ハンバーガー（スマホ用） -->
+        <div class="hamburger" onclick="toggleMenu()">
+        ☰
+        </div>
     </header>
+
+    <!-- スマホメニュー -->
+    <nav id="menu" class="menu">
+    <% if session[:user] %>
+        <a href="/mypage">マイページ</a>
+        <a href="/plans">学習計画</a>
+<%#         <a href="/chat_rooms">質問一覧</a>
+        <a href="/chat_rooms/new">質問をする</a> %>
+        <a href="/diary">勉強日記</a>
+        <a href="/consults">面談記録</a>
+        <a href="/recommends">おすすめ参考書</a>
+        <a href="/recommends_list">英語参考書の良書一覧</a>
+        <a href="/logout">ログアウト</a>
+    <% end %>
+    </nav>
+
+    <!-- 背景 -->
+    <div id="overlay" onclick="toggleMenu()"></div>
+        
 
     <main>
       <%= yield %>
     </main>
+
+    <script>
+    function toggleMenu() {
+    const menu = document.getElementById("menu");
+    const overlay = document.getElementById("overlay");
+
+    menu.classList.toggle("open");
+    overlay.classList.toggle("show");
+    }
+    </script>
   </body>
 </html>
 

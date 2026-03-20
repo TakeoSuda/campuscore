@@ -1,0 +1,36 @@
+<div class="recommends-page">
+    <h1>英語参考書の良書一覧</h1>
+    <p>このページでは、英語学習に役立つ参考書をカテゴリー別に紹介しています。各参考書には、レベルや特徴を記載していますので、自分の学習段階や目的に合った参考書を見つけてください。</p>
+<% @recommendations.group_by { |rec| rec["category"] }.each do |category, recs| %>
+  <div class="category-box">
+    <h2 class="category-title">
+      <%= case category
+          when "word" then "📘 単語"
+          when "grammar" then "📗 文法"
+          when "reading" then "📖 読解"
+          end %>
+    </h2>
+
+    <div class="cards">
+      <% recs.each do |rec| %>
+        <div class="card">
+          <h3 class="title"><%= rec["title"] %></h3>
+          <p class="level">レベル: <%= rec["level"] %> <%= case rec["level"].to_i
+  when 1 then '☆'
+  when 2 then '☆☆'
+  when 3 then '☆☆☆'
+  when 4 then '☆☆☆☆'
+  when 5 then '☆☆☆☆☆'
+  end %></p>
+          <p class="desc">説明: <%= rec["description"] %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="back-btn">
+  <a href="/mypage">マイページに戻る</a>
+</div>
+
+</div>

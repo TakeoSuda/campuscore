@@ -34,6 +34,14 @@ end
 
 require 'bcrypt'
 
+# 全てのルーティングの前に実行される処理
+before do
+  # ホーム（'/'）へのアクセスは除外しないと無限ループになるためチェック
+  # また、リファラが nil（直接入力）の場合に実行
+  if request.path_info != '/' && request.referer.nil?
+    redirect '/'
+  end
+end
 
 get '/' do
   # views/index.erb を探しに行きます
@@ -48,15 +56,34 @@ end
 post "/signup" do
   @name_kana = params[:name_kana]
   @name = params[:name]
+
+  result = client.exec_params("SELECT email FROM users WHERE email = $1", [params[:email]])
+  if result.first
+    @error = "そのメールアドレスは既に使用されています"
+    result.clear # 使い終わったらクリア
+    return erb :signup
+  end
+
   @email = params[:email]
   
-  if params[:password] == params[:password_confirm] 
-    # bcryptで暗号化
-    @password = BCrypt::Password.create(params[:password])
-  else
+  password = params[:password]
+  password_confirm = params[:password_confirm]
+
+  # ① パスワード形式チェック
+  unless password =~ /\A(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*-])[A-Za-z\d!@#$%^&*-]{8,}\z/
+    @error = "パスワードは8文字以上で、英字と数字、記号を両方含めてください"
+    return erb :signup
+  end
+
+  # ② 確認用パスワードチェック
+  if password != password_confirm
     @error = "パスワードが一致しません。"
     return erb :signup
   end
+
+  # ③ OKなら保存
+  @password = BCrypt::Password.create(password)
+
 
   @school = params[:school]
   @grade = params[:grade]
@@ -190,10 +217,10 @@ end
 # チャットルーム関係
 get '/chat_rooms/new' do
   # 他のユーザー一覧を取得（自分以外）
-  current_user_id = session[:user]["id"]
+  #current_user_id = session[:user]["id"]
   @users = client.exec_params(
-    "SELECT id, name FROM users WHERE id <> $1",
-    [current_user_id]
+    "SELECT id, name FROM users WHERE name = $1",
+    ["須田丈夫"]
   ).to_a
 
   erb :new_chat_room
@@ -415,3 +442,14 @@ ORDER BY category ASC, level DESC",
 
 erb :recommends_results 
 end
+
+# 英語参考書の良書一覧
+get '/recommends_list' do
+  @user_id = session[:user]["id"]
+  @recommendations = client.exec_params(
+    "SELECT * FROM english_books eb"
+  ).to_a
+
+  erb :recommends_list
+end
+
