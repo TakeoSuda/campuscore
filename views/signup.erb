@@ -5,19 +5,19 @@
 <form action="/signup" method="post">
 
     <div>
-    <input type="text" name="name_kana" placeholder="名前(フリガナ)">
+    <input type="text" name="name_kana" placeholder="名前(フリガナ)" value="<%= @name_kana %>">
     </div>
 
     <div>
-    <input type="text" name="name" placeholder="名前">
+    <input type="text" name="name" placeholder="名前" value="<%= @name %>">
     </div>
 
     <div>
-    <input type="email" name="email" placeholder="メールアドレス">
+    <input type="email" name="email" placeholder="メールアドレス" value="<%= @email %>">
     </div>
 
     <div>
-    <input type="text" name="school" placeholder="学校名">
+    <input type="text" name="school" placeholder="学校名" value="<%= @school %>">
     </div>
 
     <div>

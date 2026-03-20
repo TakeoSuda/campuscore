@@ -56,7 +56,9 @@ end
 post "/signup" do
   @name_kana = params[:name_kana]
   @name = params[:name]
-
+  @school = params[:school]
+  @grade = params[:grade]
+  
   result = client.exec_params("SELECT email FROM users WHERE email = $1", [params[:email]])
   if result.first
     @error = "そのメールアドレスは既に使用されています"
@@ -85,8 +87,7 @@ post "/signup" do
   @password = BCrypt::Password.create(password)
 
 
-  @school = params[:school]
-  @grade = params[:grade]
+
 
   client.exec_params(
     "INSERT INTO users (name_kana, name, email, password, school, grade) VALUES ($1, $2, $3, $4, $5, $6)",

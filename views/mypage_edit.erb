@@ -78,7 +78,7 @@
 
     <div>
     <label for="eiken_level">英検取得済級</label>
-    <select name="eiken_level" id="eiken_level" required>
+    <select name="eiken_level" id="eiken_level">
         <option value="">-- 選択してください --</option>
         <option value="1級" <%= "selected" if @user["eiken_level"] == "1級" %>>1級</option>
         <option value="準1級" <%= "selected" if @user["eiken_level"] == "準1級" %>>準1級</option>
@@ -91,7 +91,7 @@
     
     <div>
     <label for="desired_eiken_level">英検で取得したい級</label>
-    <select name="desired_eiken_level" id="desired_eiken_level" required>
+    <select name="desired_eiken_level" id="desired_eiken_level">
         <option value="">-- 選択してください --</option>
         <option value="1級" <%= "selected" if @user["desired_eiken_level"] == "1級" %>>1級</option>
         <option value="準1級" <%= "selected" if @user["desired_eiken_level"] == "準1級" %>>準1級</option>
