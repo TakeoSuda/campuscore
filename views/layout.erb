@@ -11,8 +11,13 @@
         <!-- ヘッダー -->
     <header class="header">
 
-        <div class="logo"><h1><a href="/mypage" style="text-decoration: none; color: #1111d4;">CampusCore</a></h1></div>
-
+    <div class="logo">
+        <h1>
+            <a href="<%= session[:user] ? '/mypage' : '/' %>" style="text-decoration: none; color: #1111d4;">
+            CampusCore
+            </a>
+        </h1>
+    </div>
         <!-- PC用メニュー -->
         <nav class="pc-menu">
         <% if session[:user] %>
