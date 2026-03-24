@@ -13,14 +13,14 @@
 
     <div class="logo">
         <h1>
-            <a href="<%= session[:user] ? '/mypage' : '/' %>" style="text-decoration: none; color: #1111d4;">
+            <a href="<%= session[:user_id] ? '/mypage' : '/' %>" style="text-decoration: none; color: #1111d4;">
             CampusCore
             </a>
         </h1>
     </div>
         <!-- PC用メニュー -->
         <nav class="pc-menu">
-        <% if session[:user] %>
+        <% if session[:user_id] %>
         <a href="/mypage">マイページ</a>
         <a href="/plans">学習計画</a>
 <%#         <a href="/chat_rooms">質問一覧</a>
@@ -41,7 +41,7 @@
 
     <!-- スマホメニュー -->
     <nav id="menu" class="menu">
-    <% if session[:user] %>
+    <% if session[:user_id] %>
         <a href="/mypage">マイページ</a>
         <a href="/plans">学習計画</a>
 <%#         <a href="/chat_rooms">質問一覧</a>

@@ -58,7 +58,7 @@ post "/signup" do
   @name = params[:name]
   @school = params[:school]
   @grade = params[:grade]
-  
+
   result = client.exec_params("SELECT email FROM users WHERE email = $1", [params[:email]])
   if result.first
     @error = "そのメールアドレスは既に使用されています"
@@ -105,19 +105,38 @@ post "/login" do
   email = params[:email]
   password = params[:password]
 
-  # DBからユーザーを取得（ハッシュも取得）
   result = client.exec_params("SELECT * FROM users WHERE email = $1", [email])
   user = result.first
 
   if user && BCrypt::Password.new(user['password']) == password
-    # 照合成功
-    session[:user] = user
-    redirect "/mypage"
+    session[:user_id] = user['id']
+
+    if user['is_admin'] == 't'
+      redirect "/users_info"
+    else
+      redirect "/mypage"
+    end
+
   else
     @error = "メールアドレスまたはパスワードが間違っています"
     erb :login
   end
 end
+
+get '/users_info' do
+  redirect '/login' unless session[:user_id]
+
+  user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless user
+
+  redirect '/' unless user["is_admin"].to_s == 't'
+
+  # 管理者用に必要なカラムだけ取得
+  @users = client.exec_params("SELECT id, name, email, school, grade, is_admin FROM users ORDER BY id ASC").to_a
+
+  erb :users_info
+end
+
 
 get '/logout' do
   session.clear
@@ -127,7 +146,7 @@ end
 
 # マイページ関係
 get '/mypage' do
-  user_id = session[:user]["id"]
+  user_id = session[:user_id]
 
   result = client.exec_params(
   "SELECT * FROM users WHERE id=$1",
@@ -139,7 +158,7 @@ get '/mypage' do
 end
 
 get "/mypage_edit" do
-  user_id = session[:user]["id"]
+  user_id = session[:user_id]
 
   result = client.exec_params(
     "SELECT * FROM users WHERE id=$1",
@@ -152,23 +171,29 @@ get "/mypage_edit" do
 end
 
 post '/mypage_edit' do
-  user_id = session[:user]["id"]
+  user_id = session[:user_id]
   @name_kana = params[:name_kana]
   @name = params[:name]
   @email = params[:email]
   
-# パスワードが入力された時だけ更新するロジック 
-if params[:password] && params[:password] != "" && params[:password] == params[:password_confirm]
-# パスワードをハッシュ化して保存する処理 
+current_user = client.exec_params(
+  "SELECT * FROM users WHERE id=$1",
+  [user_id]
+).first
+halt 404 unless current_user
 
-# パスワードをハッシュ化する処理 
-# params[:password] はフォームから送られてきた生パスワード 
-  raw_password = params[:password] 
-# 1. ハッシュ化を実行（「ソルト」と呼ばれるランダムな値も自動で付与されます） 
-  @password = BCrypt::Password.create(raw_password) 
+# パスワードが入力された時だけ更新するロジック 
+if params[:password] && params[:password] != ""
+  if params[:password] != params[:password_confirm]
+    @error = "パスワードが一致しません"
+    return erb :mypage_edit
+  end
+
+  @password = BCrypt::Password.create(params[:password])
 else
-  @password = session[:user]["password"]  # パスワードが入力されていない場合は現在のパスワードを保持
+  @password = current_user["password"]
 end
+
 
   @school = params[:school]
   @grade = params[:grade]
@@ -218,7 +243,7 @@ end
 # チャットルーム関係
 get '/chat_rooms/new' do
   # 他のユーザー一覧を取得（自分以外）
-  #current_user_id = session[:user]["id"]
+  #current_user_id = session[:user_id]
   @users = client.exec_params(
     "SELECT id, name FROM users WHERE name = $1",
     ["須田丈夫"]
@@ -228,7 +253,7 @@ get '/chat_rooms/new' do
 end
 
 post '/chat_rooms' do
-  current_user_id = session[:user]["id"]
+  current_user_id = session[:user_id]
   other_user_id = params[:user_id].to_i  # フォームから送られてくる相手ID
 
   # 新しいチャットルームを作成（個別チャットは名前なし）
@@ -252,7 +277,7 @@ end
 
 
 get '/chat_rooms' do
-  user_id = session[:user]["id"]
+  user_id = session[:user_id]
   
   # 自分が参加しているルームを取得
   @chat_rooms = client.exec_params(
@@ -287,7 +312,7 @@ end
 
 post '/chat_rooms/:id/messages' do
   chat_room_id = params[:id]
-  sender_id = session[:user]["id"]
+  sender_id = session[:user_id]
   content = params[:content]
 
   client.exec_params(
@@ -306,7 +331,7 @@ get '/plan_new' do
 end
 
 post '/plan_new' do
-  @user_id = session[:user]["id"]
+  @user_id = session[:user_id]
   @subject = params[:subject]
   @material = params[:material]
   @start_date = params[:start_date]
@@ -325,7 +350,7 @@ post '/plan_new' do
 end
 
 get '/plans' do
-  @user_id = session[:user]["id"]
+  @user_id = session[:user_id]
   @plans = client.exec_params(
     "SELECT * FROM plans
       WHERE user_id = $1
@@ -368,7 +393,7 @@ end
 #面談記録関係
 
 get '/consults' do
-  @user_id = session[:user]["id"]
+  @user_id = session[:user_id]
   @consults = client.exec_params(
     "SELECT * FROM consults
       WHERE user_id = $1
@@ -379,7 +404,7 @@ get '/consults' do
 end
 
 post '/consults/new' do
-  @user_id = session[:user]["id"]
+  @user_id = session[:user_id]
   @content = params[:content]
   @date = params[:date]
   
@@ -393,7 +418,7 @@ end
 
 #勉強日記関係
 get '/diary' do
-  @user_id = session[:user]["id"]
+  @user_id = session[:user_id]
   @diary_entries = client.exec_params(
     "SELECT * FROM diary_entries
       WHERE user_id = $1
@@ -404,7 +429,7 @@ get '/diary' do
 end
 
 post '/diary/new' do
-  @user_id = session[:user]["id"]
+  @user_id = session[:user_id]
   @content = params[:content]
   @date = params[:date]
 
@@ -417,14 +442,14 @@ post '/diary/new' do
 end
 
 get '/recommends' do
-	@user_id = session[:user]["id"]
+	@user_id = session[:user_id]
 	erb :recommends
 end
 
 # 英語レベルに基づく教材推薦
 post '/recommends' do 
 # 1. フォームデータの受け取り 
-@user_id = session[:user]["id"]
+@user_id = session[:user_id]
 @w_lv = params[:word_level].to_i 
 @g_lv = params[:grammar_level].to_i 
 @r_lv = params[:reading_level].to_i
@@ -433,6 +458,12 @@ post '/recommends' do
    "INSERT INTO english_levels (user_id, word_level, grammar_level, reading_level) VALUES ($1, $2, $3, $4)",
    [@user_id, @w_lv, @g_lv, @r_lv]
  )
+
+@current_user = client.exec_params(
+  "SELECT * FROM users WHERE id=$1",
+  [@user_id]
+).first
+halt 404 unless @current_user
 
 @recommended_books = client.exec_params( "SELECT * FROM english_books 
 WHERE (category = 'word' AND level = $1) 
@@ -446,7 +477,7 @@ end
 
 # 英語参考書の良書一覧
 get '/recommends_list' do
-  @user_id = session[:user]["id"]
+  @user_id = session[:user_id]
   @recommendations = client.exec_params(
     "SELECT * FROM english_books eb"
   ).to_a

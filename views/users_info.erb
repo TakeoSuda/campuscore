@@ -1,0 +1,38 @@
+<% @users.each do |user| %>
+    <p>ID: <%= user['id'] %></p>
+    <p><%= user['name_kana'] %></p>
+    <p><%= user['name'] %></p>
+    <p><%= user['email'] %></p>
+    <p><%= user['school'] %></p>
+    <p><%= user['grade'] %></p>
+    <p><%= user['desired_school'] %></p>
+    <p><%= user['faculty'] %></p>
+    <p><%= user['department'] %></p>
+    <p><%= user['second_desired_school'] %></p>
+    <p><%= user['second_desired_faculty'] %></p>
+    <p><%= user['second_desired_department'] %></p>
+    <p><%= user['eiken_level'] %></p>
+    <p><%= user['desired_eiken_level'] %></p>
+    <p><%= user['target_ct_reading'] %></p>
+    <p><%= user['target_ct_listening'] %></p>
+    <p><%= user['last_ct_reading'] %></p>
+    <p><%= user['last_ct_listening'] %></p>
+    <p><%= user['strong_subject'] %></p>
+    <p><%= user['weak_subject'] %></p>
+    <p><%= user['hobby'] %></p>
+    <p><%= user['club'] %></p>
+    <p><%= user['desired_job'] %></p>
+    <p><%= user['dream'] %></p>
+    <p><%= user['resolution'] %></p>
+    <p><%= user['consult'] %></p>
+    <p><%= user['worry'] %></p>
+    <p><%= user['request_for_class'] %></p>
+    <p><%= user['recommend_exam'] %></p>
+    <p><%= user['created_at'] %></p>
+    <p><%= user['updated_at'] %></p>
+    <hr>
+
+<% end %>
+
+<a href="/">戻る</a>
+

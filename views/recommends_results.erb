@@ -1,4 +1,4 @@
-<h2><%= session[:user]["name"] %>さんへの診断結果</h2>
+<h2><%= @current_user['name'] %>さんへの診断結果</h2>
 
 <div>
   <p>現在のレベル： 
@@ -60,4 +60,7 @@
 
 <% end %>
 
-<a href="/recommends">診断をやり直す</a>
+<div><a href="/recommends">診断をやり直す</a></div>
+<div><a href="/mypage">マイページに戻る</a></div>
+
+
