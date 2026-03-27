@@ -513,6 +513,9 @@ post '/password_reset' do
   email = params[:email]
   user = client.exec_params("SELECT * FROM users WHERE email = $1", [email]).first
 
+  p params
+  p user
+
   if user
     # 1. 使い捨てのランダムな「鍵（トークン）」を作る
     reset_token = SecureRandom.hex(32)
@@ -529,7 +532,7 @@ post '/password_reset' do
     url = "#{base_url}/password_reset/edit?token=#{reset_token}"
     Pony.mail(
     to: user[:email],
-    from: 'sudacchi.takeo@gmail.com',     # 送信元（自分のアドレス）
+    from: ENV['SMTP_USER'],     # 送信元（自分のアドレス）
     subject: "【CampusCore】パスワード再設定",
     body: "以下のURLをクリックして、1時間以内に再設定を完了してください。\n\n#{url}",
     via: :smtp,
