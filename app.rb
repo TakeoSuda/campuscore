@@ -35,10 +35,20 @@ end
 require 'bcrypt'
 
 # 全てのルーティングの前に実行される処理
+
 before do
-  # ホーム（'/'）へのアクセスは除外しないと無限ループになるためチェック
-  # また、リファラが nil（直接入力）の場合に実行
-  if request.path_info != '/' && request.referer.nil?
+  # ログインしていなくてもアクセスを許可する「公開ページ」のリスト
+  pass_list = [
+    '/', 
+    '/login', 
+    '/signup', 
+    '/password_reset', 
+    '/password_reset/edit', 
+    '/password_reset/update'
+  ]
+  
+  # 「セッションが空」かつ「アクセス先が許可リストにない」場合だけスタート画面へ飛ばす
+  if session[:user_id].nil? && !pass_list.include?(request.path_info)
     redirect '/'
   end
 end
@@ -73,7 +83,7 @@ post "/signup" do
 
   # ① パスワード形式チェック
   unless password =~ /\A(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*-])[A-Za-z\d!@#$%^&*-]{8,}\z/
-    @error = "パスワードは8文字以上で、英字と数字、記号を両方含めてください"
+    @error = "パスワードは8文字以上で、英字と数字、記号を含めてください"
     return erb :signup
   end
 
@@ -182,8 +192,15 @@ current_user = client.exec_params(
 ).first
 halt 404 unless current_user
 
+
 # パスワードが入力された時だけ更新するロジック 
 if params[:password] && params[:password] != ""
+  unless params[:password] =~ /\A(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*-])[A-Za-z\d!@#$%^&*-]{8,}\z/
+    @error = "パスワードは8文字以上で、英字と数字、記号を含めててください"
+    # ここで @user を再取得することで erb :mypage_edit で nil エラーになるのを防いでいる。
+    @user = current_user 
+    return erb :mypage_edit
+  end
   if params[:password] != params[:password_confirm]
     @error = "パスワードが一致しません"
     return erb :mypage_edit
@@ -483,5 +500,107 @@ get '/recommends_list' do
   ).to_a
 
   erb :recommends_list
+end
+
+# パスワードの再設定
+get '/password_reset' do
+  erb :password_reset
+end
+
+require 'pony'
+
+post '/password_reset' do
+  email = params[:email]
+  user = client.exec_params("SELECT * FROM users WHERE email = $1", [email]).first
+
+  if user
+    # 1. 使い捨てのランダムな「鍵（トークン）」を作る
+    reset_token = SecureRandom.hex(32)
+    # 2. データベースにトークンと有効期限（例: 1時間後）を保存する
+    client.exec_params(
+      "UPDATE users SET reset_token = $1, reset_token_expires_at = NOW() + INTERVAL '1 hour' WHERE id = $2",
+      [reset_token, user['id']]
+    )
+
+    # 3. ここでメールを送信する
+    # パスワードリセット用リンクを含むメール
+    # 環境変数 APP_URL があればそれを使い、なければローカル用を使う
+    base_url = ENV['APP_URL'] || "http://localhost:10000"
+    url = "#{base_url}/password_reset/edit?token=#{reset_token}"
+    Pony.mail(
+    to: user[:email],
+    from: 'sudacchi.takeo@gmail.com',     # 送信元（自分のアドレス）
+    subject: "【CampusCore】パスワード再設定",
+    body: "以下のURLをクリックして、1時間以内に再設定を完了してください。\n\n#{url}",
+    via: :smtp,
+    via_options: {
+      address:              'smtp.gmail.com',
+      port:                 '587',
+      enable_starttls_auto: true,
+      user_name:            ENV['SMTP_USER'],     # 環境変数から読み込む
+      password:             ENV['SMTP_PASSWORD'], # 環境変数から読み込む
+      authentication:       :plain,
+      domain:               "localhost.localdomain"
+    })
+    @message = "ご登録のメールアドレスに再設定用のリンクを送信しました。"
+  else
+    # セキュリティ上、アドレスが存在するかどうかを教えない場合もあります
+    @message = "入力された内容を確認してください"
+  end
+  erb :password_reset
+end
+
+get '/password_reset/edit' do
+  @token = params[:token]
+  
+  # DBからトークンが一致し、かつ期限（1時間）が切れていないユーザーを探す
+  user = client.exec_params(
+    "SELECT * FROM users WHERE reset_token = $1 AND reset_token_expires_at > NOW()",
+    [@token]
+  ).first
+
+  if user
+    erb :password_reset_edit # パスワード入力フォームを表示
+  else
+    @message = "このリンクは無効か、有効期限が切れています。"
+    erb :password_reset
+  end
+end
+
+post '/password_reset/update' do
+  token = params[:token]
+  password = params[:password]
+  password_confirm = params[:password_confirm]
+
+  # 1. パスワードの一致チェック
+  if password != password_confirm
+    @error = "パスワードが一致しません。"
+    @token = token
+    return erb :password_reset_edit
+  end
+
+  # 2. パスワードのバリデーション（以前作った正規表現を使うのがベスト！）
+  # ...（ここに正規表現のチェックを入れる）...
+  unless password =~ /\A(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*-])[A-Za-z\d!@#$%^&*-]{8,}\z/
+    @error = "パスワードは8文字以上で、英字と数字、記号を含めてください"
+    @token = token
+    return erb :password_reset_edit
+  end
+
+  # 3. パスワードをハッシュ化して更新し、トークンを無効化する
+  hashed_password = BCrypt::Password.create(password)
+  
+  result = client.exec_params(
+    "UPDATE users SET password = $1, reset_token = NULL, reset_token_expires_at = NULL 
+     WHERE reset_token = $2 AND reset_token_expires_at > NOW() RETURNING id",
+    [hashed_password, token]
+  )
+
+  if result.first
+    @message = "パスワードを更新しました。新しいパスワードでログインしてください。"
+    erb :login
+  else
+    "エラーが発生しました。もう一度やり直してください。"
+  end
 end
 

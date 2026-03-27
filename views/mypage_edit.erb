@@ -30,8 +30,15 @@
 
     <div>
     <p>パスワード（変更する場合のみ入力）</p>
+    <p>
     <input type="password" name="password" placeholder="新しいパスワードを入力">
+    パスワードは8文字以上で英字と数字と記号（!@#$%^&*-）を含めてください</p>
+
     </div>
+
+    <% if @error %>
+      <p style="color: red;"><%= @error %></p>
+    <% end %>
 
     <div>
     <p>パスワード（確認用）</p>
