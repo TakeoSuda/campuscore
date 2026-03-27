@@ -531,7 +531,7 @@ post '/password_reset' do
     base_url = ENV['APP_URL'] || "http://localhost:10000"
     url = "#{base_url}/password_reset/edit?token=#{reset_token}"
     Pony.mail(
-    to: user[:email],
+    to: user['email'],
     from: ENV['SMTP_USER'],     # 送信元（自分のアドレス）
     subject: "【CampusCore】パスワード再設定",
     body: "以下のURLをクリックして、1時間以内に再設定を完了してください。\n\n#{url}",
