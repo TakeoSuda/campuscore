@@ -17,6 +17,8 @@ require 'sinatra/activerecord'
 # 4. モデルなどの定義
 class User < ActiveRecord::Base
 end
+class Instruction < ActiveRecord::Base
+end
 
 # --- 以下、その他の設定 ---
 enable :sessions
