@@ -18,6 +18,14 @@
             </a>
         </h1>
     </div>
+
+    <% if session[:user_name] %>
+      <div class="header-welcome">
+        <%= session[:user_name] %>さん、こんにちは！
+      </div>
+    <% end %>
+
+
         <!-- PC用メニュー -->
         <nav class="pc-menu">
         <% if session[:user_id] %>

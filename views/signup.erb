@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 <h1>新規登録</h1>
 <% if @error %>
 <p style="color:red;"><%= @error %></p>
@@ -33,11 +35,12 @@
     </div>
 
     <div>
-    <input type="password" name="password" placeholder="パスワード">
-    <p>パスワードは8文字以上で英字と数字と記号（!@#$%^&*-）を含めてください</p>
+    <input type="password" name="password" placeholder="パスワード" id="password-input">
+    <i id="toggle-password" style="cursor: pointer;" class="far fa-eye">このボタンを押すとパスワードが表示されます</i>
     </div>
     <div>
-    <input type="password" name="password_confirm" placeholder="パスワード(確認)">
+    <input type="password" name="password_confirm" placeholder="パスワード(確認用)" id="password-input-confirm">
+    <p>パスワードは8文字以上で英字と数字と記号（!@#$%^&*-）を含めてください</p>
     </div>
     <div>
     <input type="submit" value="新規登録">
@@ -45,3 +48,6 @@
 </form>
 
 <a href="/">戻る</a>
+
+<script src="/js/script.js"></script>
+

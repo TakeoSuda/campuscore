@@ -1,4 +1,9 @@
 require 'sinatra'
+require 'sinatra/activerecord'
+ENV['RACK_ENV'] ||= 'development'
+
+class User < ActiveRecord::Base
+end
 
 enable :sessions
 
@@ -29,7 +34,7 @@ if db_url
   client = PG.connect("#{db_url}?sslmode=require")
 else
   # --- ローカル環境の場合 ---
-  client = PG.connect(host: "localhost", dbname: "campuscore")
+  client = PG.connect(host: "localhost", dbname: "campus_db_34pr")
 end
 
 require 'bcrypt'
@@ -120,6 +125,7 @@ post "/login" do
 
   if user && BCrypt::Password.new(user['password']) == password
     session[:user_id] = user['id']
+    session[:user_name] = user['name']
 
     if user['is_admin'] == 't'
       redirect "/users_info"
