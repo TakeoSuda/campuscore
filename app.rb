@@ -1,53 +1,45 @@
 require 'sinatra'
-require 'sinatra/activerecord'
+# 1. 最初に環境を確定させる
 ENV['RACK_ENV'] ||= 'development'
 
+# 2. 次に「ActiveRecordの設定」を最初に行う
+# これを require 'sinatra/activerecord' より先に書くのがポイントです！
+set :database, ENV['DATABASE_URL'] || {
+  adapter: 'postgresql',
+  host: 'localhost',
+  database: 'campus_db_34pr',
+  username: 'takeosuda'
+}
+
+# 3. 設定が終わってから、ライブラリを読み込む
+require 'sinatra/activerecord'
+
+# 4. モデルなどの定義
 class User < ActiveRecord::Base
 end
 
+# --- 以下、その他の設定 ---
 enable :sessions
 
-# ❌ 修正前: 常に読み込もうとしてエラーになる
-# require 'sinatra/reloader'
-
-# ✅ 修正後: 開発環境（development）の時だけ読み込む
 if development?
   require 'sinatra/reloader'
 end
 require 'sinatra/cookies'
 
-# Renderの環境変数 PORT を受け取り、なければ 10000 を使う
 set :port, ENV['PORT'] || 10000
-
-# 重要: '0.0.0.0' にしないと外部（Renderのルーター）からアクセスできません
 set :bind, '0.0.0.0'
 
 require 'pg'
 
-# --- ここから修正・追加 ---
-# ActiveRecord用の接続設定
-# Render環境なら ENV['DATABASE_URL'] を使い、ローカルならハッシュの設定を使います
-set :database, ENV['DATABASE_URL'] || {
-  adapter: 'postgresql',
-  host: 'localhost',
-  database: 'campus_db_34pr',
-  username: 'takeosuda' # あなたのMacのユーザー名に合わせてください
-}
-
-# 既存のPG.connect（生SQL用）も残す場合は以下のように整理
+# 既存のPG.connect（生SQL用）
 db_url = ENV['DATABASE_URL']
 if db_url
-  # 本番環境: SSLモードを強制
   client = PG.connect("#{db_url}?sslmode=require")
 else
-  # ローカル環境
   client = PG.connect(host: "localhost", dbname: "campus_db_34pr")
 end
-# --- ここまで ---
 
 require 'bcrypt'
-
-# 全てのルーティングの前に実行される処理
 
 before do
   # ログインしていなくてもアクセスを許可する「公開ページ」のリスト
