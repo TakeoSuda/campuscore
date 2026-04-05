@@ -24,18 +24,26 @@ set :bind, '0.0.0.0'
 
 require 'pg'
 
-# 1. 接続情報を取得
-db_url = ENV['DATABASE_URL']
+# --- ここから修正・追加 ---
+# ActiveRecord用の接続設定
+# Render環境なら ENV['DATABASE_URL'] を使い、ローカルならハッシュの設定を使います
+set :database, ENV['DATABASE_URL'] || {
+  adapter: 'postgresql',
+  host: 'localhost',
+  database: 'campus_db_34pr',
+  username: 'takeosuda' # あなたのMacのユーザー名に合わせてください
+}
 
+# 既存のPG.connect（生SQL用）も残す場合は以下のように整理
+db_url = ENV['DATABASE_URL']
 if db_url
-  # --- Render（本番環境）の場合 ---
-  # DATABASE_URLの末尾に sslmode=require を強制的に付与して接続します
-  # これをしないと、データの書き込み（Signup）時に拒否されることがあります
+  # 本番環境: SSLモードを強制
   client = PG.connect("#{db_url}?sslmode=require")
 else
-  # --- ローカル環境の場合 ---
+  # ローカル環境
   client = PG.connect(host: "localhost", dbname: "campus_db_34pr")
 end
+# --- ここまで ---
 
 require 'bcrypt'
 
