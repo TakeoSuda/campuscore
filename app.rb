@@ -1,64 +1,35 @@
 require 'sinatra'
-require 'sinatra/activerecord'
 require 'pg'
-
-# 1. 最初に環境を確定させる
-ENV['RACK_ENV'] ||= 'development'
-
-# 2. 次に「ActiveRecordの設定」を最初に行う
-# これを require 'sinatra/activerecord' より先に書くのがポイントです！
-
-# 1. データベース設定を定義
-db_config = ENV['DATABASE_URL'] || {
-  adapter: 'postgresql',
-  host: 'localhost',
-  database: 'campus_db_34pr',
-  username: 'takeosuda'
-}
-
-# 2. Sinatraに設定を教える
-set :database, db_config
-
-# 3. 【重要】ActiveRecordに強制的に接続を開始させる
-# これを足すことで "ConnectionNotDefined" を防げます
-ActiveRecord::Base.establish_connection(db_config)
-
-
-# 4. モデルなどの定義
-class User < ActiveRecord::Base
-  # 1人のユーザーはたくさんの指示を持つ
-  has_many :instructions
-end
-
-class Instruction < ActiveRecord::Base
-  # 1つの指示は1人のユーザーに所属する
-  belongs_to :user
-end
-
-# --- 以下、その他の設定 ---
-enable :sessions
-
-if development?
-  require 'sinatra/reloader'
-end
+require 'bcrypt'
+require 'pony'
+require 'securerandom'
 require 'sinatra/cookies'
 
-set :port, ENV['PORT'] || 10000
-set :bind, '0.0.0.0'
-
-
-# 既存のPG.connect（生SQL用）
+# --- 1. データベース接続設定 (一箇所に集約) ---
 db_url = ENV['DATABASE_URL']
 if db_url
+  # Render環境（SSLモードを有効にして接続）
   client = PG.connect("#{db_url}?sslmode=require")
 else
+  # ローカル環境（自分のMac）
   client = PG.connect(host: "localhost", dbname: "campus_db_34pr")
 end
 
-require 'bcrypt'
+# --- 2. Sinatraの基本設定 ---
+enable :sessions
 
+# 開発環境のみリローダー（自動更新）を有効にする
+if development?
+  require 'sinatra/reloader'
+end
+
+# Renderなどの外部環境でポート番号を正しく認識させる設定
+set :port, ENV['PORT'] || 10000
+set :bind, '0.0.0.0'
+
+# --- 3. ログインチェック (beforeフィルタ) ---
 before do
-  # ログインしていなくてもアクセスを許可する「公開ページ」のリスト
+  # ログインなしでアクセスできるページ
   pass_list = [
     '/', 
     '/login', 
@@ -68,11 +39,12 @@ before do
     '/password_reset/update'
   ]
   
-  # 「セッションが空」かつ「アクセス先が許可リストにない」場合だけスタート画面へ飛ばす
   if session[:user_id].nil? && !pass_list.include?(request.path_info)
     redirect '/'
   end
 end
+
+# --- ここから下に get '/' do ... などのルーティングを続けてください ---
 
 get '/' do
   # views/index.erb を探しに行きます
@@ -664,22 +636,18 @@ post '/instructions/:id/read' do
 end
 
 get '/instructions/new' do
-  @users = User.select(:id, :name)
+  @users = client.exec_params("SELECT id, name FROM users ORDER BY name ASC").to_a
   erb :make_instructions
 end
 
 post '/instructions/new' do
-  @content = params[:content]
-  @category = params[:category]
-# 全ユーザーの id と name を取得して @users に入れる
-  # select(:id, :name) と書くことで、必要なデータだけを効率よく取れます
-  @users = User.select(:id, :name)
+  user_id = params[:user_id]
+  # 全員向け（NULL）の場合は、空文字ではなくnilにする処理
+  target_user_id = (user_id == "" || user_id.nil?) ? nil : user_id
 
-  # これだけで created_at も自動で入る！
-  Instruction.create(
-    content: params[:content],
-    category: params[:category],
-    user_id: params[:user_id]
+  client.exec_params(
+    "INSERT INTO instructions (content, category, user_id, created_at) VALUES ($1, $2, $3, NOW())",
+    [params[:content], params[:category], target_user_id]
   )
 
   redirect '/instructions'
