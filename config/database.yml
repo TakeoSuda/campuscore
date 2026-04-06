@@ -1,8 +1,6 @@
-development:
+production:
   adapter: postgresql
   encoding: unicode
-  database: campus_db_34pr        # すでに作成済みのDB名を指定
-  pool: 5
-  username: takeosuda          # DBeaverで接続している時と同じユーザー名
-  password:                   # パスワードを設定していれば入力（なければ空でOK）
-  host: localhost
+  url: <%= ENV['DATABASE_URL'] %>
+
+  
