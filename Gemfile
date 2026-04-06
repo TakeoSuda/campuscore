@@ -11,4 +11,4 @@ gem 'pony' # メール送信用（パスワードリセットで必要）
 gem 'sinatra-activerecord' # SinatraとActiveRecordを繋ぐ
 gem 'rake'                 # データベース操作（作成など）を行うツール
 gem 'racksh'
-
+gem 'irb'

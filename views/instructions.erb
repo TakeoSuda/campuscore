@@ -1,0 +1,19 @@
+<h1>学習アドバイス一覧</h1>
+<% @instructions.each do |instruction| %>
+  <div class="instruction">
+      <h3><%= instruction['category'] %></h3>
+      <p><%= instruction['content'] %></p>
+    <% if instruction['read_record_id'] %>
+      <span class="badge">既読</span><span class="read-date">（<%= instruction['read_at'] ? Time.parse(instruction['read_at']).strftime("%Y-%m-%d %H:%M") : "不明" %>）</span>
+    <% else %>
+      <form action="/instructions/<%= instruction['id'] %>/read" method="post">
+      <button type="submit">アドバイスを読みました</button>
+      </form>
+    <% end %>
+  </div>
+<% end %>
+
+
+
+
+

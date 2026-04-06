@@ -154,6 +154,19 @@ button:hover, .btn:hover {
   box-shadow: 0 5px 15px rgba(17, 17, 212, 0.2);
 }
 
+/* 既読バッジの基本スタイル */
+span.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffffff;            /* 文字色（白） */
+  background-color: #28a745; /* 背景色（落ち着いた緑） */
+  border-radius: 20px;       /* 角を丸くしてカプセル型に */
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
 /* Card Styles (おすすめ表示用) */
 .card {
   background: white;

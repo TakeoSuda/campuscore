@@ -1,23 +1,38 @@
 require 'sinatra'
+require 'sinatra/activerecord'
+require 'pg'
+
 # 1. 最初に環境を確定させる
 ENV['RACK_ENV'] ||= 'development'
 
 # 2. 次に「ActiveRecordの設定」を最初に行う
 # これを require 'sinatra/activerecord' より先に書くのがポイントです！
-set :database, ENV['DATABASE_URL'] || {
+
+# 1. データベース設定を定義
+db_config = ENV['DATABASE_URL'] || {
   adapter: 'postgresql',
   host: 'localhost',
   database: 'campus_db_34pr',
   username: 'takeosuda'
 }
 
-# 3. 設定が終わってから、ライブラリを読み込む
-require 'sinatra/activerecord'
+# 2. Sinatraに設定を教える
+set :database, db_config
+
+# 3. 【重要】ActiveRecordに強制的に接続を開始させる
+# これを足すことで "ConnectionNotDefined" を防げます
+ActiveRecord::Base.establish_connection(db_config)
+
 
 # 4. モデルなどの定義
 class User < ActiveRecord::Base
+  # 1人のユーザーはたくさんの指示を持つ
+  has_many :instructions
 end
+
 class Instruction < ActiveRecord::Base
+  # 1つの指示は1人のユーザーに所属する
+  belongs_to :user
 end
 
 # --- 以下、その他の設定 ---
@@ -31,7 +46,6 @@ require 'sinatra/cookies'
 set :port, ENV['PORT'] || 10000
 set :bind, '0.0.0.0'
 
-require 'pg'
 
 # 既存のPG.connect（生SQL用）
 db_url = ENV['DATABASE_URL']
@@ -172,6 +186,10 @@ get '/mypage' do
   )
 
   @user = result[0]
+
+# ここで @is_admin に真偽値を振っておくと、erbで使いやすくなります
+  @is_admin = (@user['is_admin'] == 't' || @user['is_admin'] == true)
+
   erb :mypage
 end
 
@@ -615,3 +633,54 @@ post '/password_reset/update' do
   end
 end
 
+# 勉強法の指示関係
+
+get '/instructions' do
+  user_id = session[:user_id]
+
+  # テーブル名（instructions, reads）をすべて省略せずに記述したSQL
+  query = "SELECT instructions.*, reads.read_at, reads.id AS read_record_id " +
+          "FROM instructions " +
+          "LEFT JOIN reads ON instructions.id = reads.instruction_id AND reads.user_id = $1 " +
+          "WHERE instructions.user_id = $1 OR instructions.user_id IS NULL " +
+          "ORDER BY instructions.created_at DESC"
+
+  @instructions = client.exec_params(query, [user_id]).to_a
+  
+  erb :instructions
+end
+
+post '/instructions/:id/read' do
+  @user_id = session[:user_id]
+  instruction_id = params[:id]
+  
+  # データベースを更新
+  client.exec_params(
+    "INSERT INTO reads (instruction_id, user_id) VALUES ($1, $2)",
+    [instruction_id, @user_id]
+  )
+  
+  redirect '/instructions'
+end
+
+get '/instructions/new' do
+  @users = User.select(:id, :name)
+  erb :make_instructions
+end
+
+post '/instructions/new' do
+  @content = params[:content]
+  @category = params[:category]
+# 全ユーザーの id と name を取得して @users に入れる
+  # select(:id, :name) と書くことで、必要なデータだけを効率よく取れます
+  @users = User.select(:id, :name)
+
+  # これだけで created_at も自動で入る！
+  Instruction.create(
+    content: params[:content],
+    category: params[:category],
+    user_id: params[:user_id]
+  )
+
+  redirect '/instructions'
+end

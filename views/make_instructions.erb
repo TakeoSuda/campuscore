@@ -1,0 +1,19 @@
+<h1>学習アドバイスの作成</h1>
+<form method="post" action="/instructions/new">
+<label for="user_id">指示を送る生徒を選択:</label>
+    <select name="user_id" id="user_select">
+    <option value="">-- 生徒を選択 --</option>
+    
+    <% @users.each do |user| %>
+        <option value="<%= user.id %>"><%= user.name %></option>
+    <% end %>
+    </select>
+  <label for="title">分野:</label>
+  <input type="text" id="title" name="category" required>
+
+  <label for="content">内容:</label>
+  <textarea id="content" name="content" required></textarea>
+
+  <button type="submit">作成</button>
+</form>
+

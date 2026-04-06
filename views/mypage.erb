@@ -21,10 +21,21 @@
       <div class="icon">📝</div>
       <h3>勉強日記を書く</h3>
     </a>
-    <a href="/consults" class="nav-card">
-      <div class="icon">👥</div>
-      <h3>面談記録</h3>
-    </a>
+      <a href="/consults" class="nav-card">
+        <div class="icon">👥</div>
+        <h3>面談記録</h3>
+      </a>
+      <a href="/instructions" class="nav-card">
+        <div class="icon">📋</div>
+        <h3>講師からの学習アドバイスを見る</h3>
+      </a>
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/instructions/new" class="nav-card accent-card">
+        <div class="icon">➕</div>
+        <h3>学習アドバイスを作る</h3>
+      </a>
+      <% end %>
+
     <%# <a href="/chat_rooms" class="nav-card">
       <div class="icon">💬</div>
       <h3>質問一覧</h3>
