@@ -645,9 +645,10 @@ post '/instructions/new' do
   # 全員向け（NULL）の場合は、空文字ではなくnilにする処理
   target_user_id = (user_id == "" || user_id.nil?) ? nil : user_id
 
-  client.exec_params(
-    "INSERT INTO instructions (content, category, user_id, created_at) VALUES ($1, $2, $3, NOW())",
-    [params[:content], params[:category], target_user_id]
+client.exec_params(
+    "INSERT INTO instructions (content, category, user_id, created_at, updated_at) 
+     VALUES ($1, $2, $3, NOW(), NOW())",
+    [params[:content], params[:category], params[:user_id]]
   )
 
   redirect '/instructions'
