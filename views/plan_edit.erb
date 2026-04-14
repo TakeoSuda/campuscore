@@ -7,23 +7,23 @@
     </div>
 
     <div>
-    <span>開始予定日：</span><input type="date" name="start_date" placeholder="開始日" value="<%= @plan["start_date"] %>">
+    <span>開始予定日：</span><input type="date" name="start_date" placeholder="開始日" value="<%= @plan["start_date"] %>" required>
     </div>
 
     <div>
-    <input type="date" name="end_date" placeholder="終了日" value="<%= @plan["end_date"] %>">
+    <span>終了予定日：</span><input type="date" name="end_date" placeholder="終了日" value="<%= @plan["end_date"] %>" required>
     </div>
 
     <div>
-    <input type="integer" name="laps" placeholder="何周するか" value="<%= @plan["laps"] %>">
+    <span>何周するか：</span><input type="integer" name="laps" placeholder="何周するか" value="<%= @plan["laps"] %>" required>
     </div>
 
     <div>
-    <input type="integer" name="completed_laps" placeholder="何周したか" value="<%= @plan["completed_laps"] %>">
+    <span>何周したか：</span><input type="integer" name="completed_laps" placeholder="何周したか" value="<%= @plan["completed_laps"] %>" required>
     </div>
 
     <div>
-    <input type="text" name="purpose" placeholder="目的" value="<%= @plan["purpose"] %>">
+    <span>目的：</span><input type="text" name="purpose" placeholder="目的" value="<%= @plan["purpose"] %>" required>
     </div>
 
      <div>
