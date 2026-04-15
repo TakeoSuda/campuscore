@@ -136,7 +136,14 @@ get '/users_info' do
   redirect '/' unless user["is_admin"].to_s == 't'
 
   # 管理者用に必要なカラムだけ取得
-  @users = client.exec_params("SELECT id, name, email, school, grade, is_admin FROM users ORDER BY id ASC").to_a
+  @users = client.exec_params(
+    "SELECT id, name, email, school, grade, desired_school, 
+    faculty, department, second_desired_school, second_desired_faculty, second_desired_department, 
+    target_ct_reading, target_ct_listening, last_ct_reading, last_ct_listening, eiken_level, desired_eiken_level, 
+    strong_subject, weak_subject, hobby, club, 
+    desired_job, dream, resolution, consult, worry, recommend_exam, request_for_class,
+    is_admin FROM users ORDER BY id ASC"
+  ).to_a
 
   erb :users_info
 end
