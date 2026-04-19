@@ -139,11 +139,15 @@ get '/users_info' do
       users.*, 
       plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status,
       diary_entries.content AS d_content, diary_entries.date AS d_date,
-      consults.content AS c_content, consults.date AS c_date
+      consults.content AS c_content, consults.date AS c_date,
+      instructions.content AS i_content, instructions.created_at AS i_created_at,
+      instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at
     FROM users 
     LEFT JOIN plans ON users.id = plans.user_id 
     LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
     LEFT JOIN consults ON users.id = consults.user_id
+    LEFT JOIN instructions ON users.id = instructions.user_id OR instructions.user_id IS NULL
+    LEFT JOIN instruction_replies ON instructions.id = instruction_replies.instruction_id
   ").to_a
 
   # データをユーザーごとにグルーピングする
@@ -151,17 +155,18 @@ get '/users_info' do
   raw_data.each do |row|
     uid = row['id']
     unless users_hash[uid]
-      users_hash[uid] = row.merge({ 'plans' => [], 'diaries' => [], 'consults' => [] })
+      users_hash[uid] = row.merge({ 'plans' => [], 'diaries' => [], 'consults' => [], 'instructions' => []})
     end
 
     # 重複を避けつつデータを追加（IDなどで判定するのが理想ですが、簡易的に内容で判定）
     users_hash[uid]['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'] } if row['p_subject']
     users_hash[uid]['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     users_hash[uid]['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
+    users_hash[uid]['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'] } if row['i_content']
   end
 
   @users = users_hash.values.map do |u|
-    u['plans'].uniq!; u['diaries'].uniq!; u['consults'].uniq!
+    u['plans'].uniq!; u['diaries'].uniq!; u['consults'].uniq!; u['instructions'].uniq!;
     u
   end
 
@@ -182,27 +187,32 @@ get '/users_info/:id' do
     SELECT users.*, 
            plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status,
            diary_entries.content AS d_content, diary_entries.date AS d_date,
-           consults.content AS c_content, consults.date AS c_date
+           consults.content AS c_content, consults.date AS c_date,
+           instructions.content AS i_content, instructions.created_at AS i_created_at,
+           instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at
     FROM users 
     LEFT JOIN plans ON users.id = plans.user_id 
     LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
     LEFT JOIN consults ON users.id = consults.user_id
+    LEFT JOIN instructions ON users.id = instructions.user_id OR instructions.user_id IS NULL
+    LEFT JOIN instruction_replies ON instructions.id = instruction_replies.instruction_id
     WHERE users.id = $1
   ", [target_id]).to_a
 
   halt 404 if raw_data.empty?
 
   # 1人分のデータを整理（前のロジックを活用）
-  user_data = raw_data.first.merge({ 'plans' => [], 'diaries' => [], 'consults' => [] })
+  user_data = raw_data.first.merge({ 'plans' => [], 'diaries' => [], 'consults' => [], 'instructions' => [] })
   
   raw_data.each do |row|
     user_data['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'] } if row['p_subject']
     user_data['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     user_data['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
+    user_data['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'] } if row['i_content']
   end
 
   # 重複削除
-  user_data['plans'].uniq!; user_data['diaries'].uniq!; user_data['consults'].uniq!
+  user_data['plans'].uniq!; user_data['diaries'].uniq!; user_data['consults'].uniq!; user_data['instructions'].uniq!
   
   @user = user_data
   erb :user_detail # 新しいViewファイル

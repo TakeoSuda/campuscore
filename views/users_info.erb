@@ -83,6 +83,16 @@
                 <hr>
             <% end %>
         </div>
+        <div style="border: 1px solid #ccc; padding: 10px; margin-top: 20px;">
+            <h1>学習アドバイス</h1>
+            <% user['instructions'].each do |instruction| %>
+                <p>日付: <%= instruction['created_at'] %></p>
+                <p>内容: <%= instruction['content'] %></p>
+                <p>返信: <%= instruction['reply_content'] %></p>
+                <p>返信日時: <%= instruction['reply_created_at'] %></p>
+                <hr>
+            <% end %>
+        </div>
     </div>
     <hr>
 
