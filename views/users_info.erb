@@ -26,7 +26,9 @@
     <p>抱負: <%= user['resolution'] %></p>
     <p>相談したいこと: <%= user['consult'] %></p>
     <p>悩み: <%= user['worry'] %></p>
-    <p>授業に対する希望: <%= user['request_for_class'] %></p>
+    <p>授業に対する希望: <% if user['request_for_class'] == 't' %>希望する
+    <% else %>希望しない</p>
+    <% end %>
     <p>推薦希望受験の有無: <%= user['recommend_exam'] %></p>
     <p>作成日時: <%= user['created_at'] %></p>
     <p>更新日時: <%= user['updated_at'] %></p>
