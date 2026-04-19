@@ -129,21 +129,41 @@ end
 
 get '/users_info' do
   redirect '/login' unless session[:user_id]
-
   user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
   halt 404 unless user
-
   redirect '/' unless user["is_admin"].to_s == 't'
 
-  # 管理者用に必要なカラムだけ取得
-  @users = client.exec_params(
-    "SELECT id, name, email, school, grade, desired_school, 
-    faculty, department, second_desired_school, second_desired_faculty, second_desired_department, 
-    target_ct_reading, target_ct_listening, last_ct_reading, last_ct_listening, eiken_level, desired_eiken_level, 
-    strong_subject, weak_subject, hobby, club, 
-    desired_job, dream, resolution, consult, worry, recommend_exam, request_for_class,
-    is_admin FROM users ORDER BY id ASC"
-  ).to_a
+  # SQL実行
+  raw_data = client.exec_params("
+    SELECT 
+      users.*, 
+      plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status,
+      diary_entries.content AS d_content, diary_entries.date AS d_date,
+      consults.content AS c_content, consults.date AS c_date
+    FROM users 
+    LEFT JOIN plans ON users.id = plans.user_id 
+    LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
+    LEFT JOIN consults ON users.id = consults.user_id
+  ").to_a
+
+  # データをユーザーごとにグルーピングする
+  users_hash = {}
+  raw_data.each do |row|
+    uid = row['id']
+    unless users_hash[uid]
+      users_hash[uid] = row.merge({ 'plans' => [], 'diaries' => [], 'consults' => [] })
+    end
+
+    # 重複を避けつつデータを追加（IDなどで判定するのが理想ですが、簡易的に内容で判定）
+    users_hash[uid]['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'] } if row['p_subject']
+    users_hash[uid]['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
+    users_hash[uid]['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
+  end
+
+  @users = users_hash.values.map do |u|
+    u['plans'].uniq!; u['diaries'].uniq!; u['consults'].uniq!
+    u
+  end
 
   erb :users_info
 end

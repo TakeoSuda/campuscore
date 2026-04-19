@@ -32,6 +32,35 @@
     <% end %>
     <p>作成日時: <%= user['created_at'] %></p>
     <p>更新日時: <%= user['updated_at'] %></p>
+    <h1>学習計画</h1>
+    <% user['plans'].each do |plan| %>
+        <p>教科: <%= plan['subject'] %></p>
+        <p>教材: <%= plan['material'] %></p>
+        <p>開始予定日: <%= plan['start_date'] %></p>
+        <p>終了予定日: <%= plan['end_date'] %></p>
+        <p>何周するか: <%= plan['laps'] %></p>
+        <p>何周したか: <%= plan['completed_laps'] %></p>
+        <p>目的: <%= plan['purpose'] %></p>
+        <p>進み具合: 
+            <% if plan['status'] == 'in_progress' %>
+                進行中
+            <% elsif plan['status'] == 'not_started' %>
+                未開始
+            <% else %>
+                完了
+            <% end %>
+        </p>
+    <% end %>
+    <h1>勉強日記</h1>
+    <% user['diaries'].each do |diary| %>
+        <p>日付: <%= diary['date'] %></p>
+        <p>内容: <%= diary['content'] %></p>
+    <% end %>
+    <h1>面談記録</h1>
+    <% user['consults'].each do |consult| %>
+        <p>日付: <%= consult['date'] %></p>
+        <p>内容: <%= consult['content'] %></p>
+    <% end %>
     <hr>
 
 <% end %>
