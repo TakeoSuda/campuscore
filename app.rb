@@ -677,14 +677,33 @@ get '/instructions' do
   user_id = session[:user_id]
 
   # テーブル名（instructions, reads）をすべて省略せずに記述したSQL
-  query = "SELECT instructions.*, reads.read_at, reads.id AS read_record_id " +
-          "FROM instructions " +
-          "LEFT JOIN reads ON instructions.id = reads.instruction_id AND reads.user_id = $1 " +
-          "WHERE instructions.user_id = $1 OR instructions.user_id IS NULL " +
-          "ORDER BY instructions.created_at DESC"
-
-  @instructions = client.exec_params(query, [user_id]).to_a
+  raw_data = client.exec_params("
+    SELECT instructions.*, reads.read_at, reads.id AS read_record_id, instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at
+    FROM instructions
+    LEFT JOIN reads ON instructions.id = reads.instruction_id AND reads.user_id = $1
+    LEFT JOIN instruction_replies ON instructions.id = instruction_replies.instruction_id
+    WHERE instructions.user_id = $1 OR instructions.user_id IS NULL
+    ORDER BY instructions.created_at DESC",
+    [user_id]
+  ).to_a
   
+  # データを指示ごとにグルーピングする
+  instructions_hash = {}
+  raw_data.each do |row|
+    i_id = row['id']
+    unless instructions_hash[i_id]
+      instructions_hash[i_id] = row.merge({ 'replies' => [] })
+    end
+
+    # 重複を避けつつデータを追加（IDなどで判定するのが理想ですが、簡易的に内容で判定）
+    instructions_hash[i_id]['replies'] << { 'content' => row['ir_content'], 'created_at' => row['ir_created_at'] } if row['ir_content']
+  end
+
+  @instructions = instructions_hash.values.map do |i|
+    i['replies'].uniq! # 重複削除
+    i
+  end
+
   erb :instructions
 end
 
@@ -719,3 +738,17 @@ client.exec_params(
 
   redirect '/instructions'
 end
+
+post '/instructions/:id/reply' do
+  instruction_id = params[:id]
+  user_id = session[:user_id]
+  content = params[:content]
+
+  client.exec_params(
+    "INSERT INTO instruction_replies (instruction_id, user_id, content, created_at) VALUES ($1, $2, $3, NOW())",
+    [instruction_id, user_id, content]
+  )
+
+  redirect "/instructions"
+end
+

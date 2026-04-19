@@ -1,7 +1,8 @@
 <h1>学習アドバイス一覧</h1>
+<% x=1 %>
 <% @instructions.each do |instruction| %>
   <div class="instruction">
-      <h3><%= instruction['category'] %></h3>
+      <h3><%= x %>. <%= instruction['category'] %></h3>
       <p><%= instruction['content'] %></p>
     <% if instruction['read_record_id'] %>
       <span class="badge">既読</span><span class="read-date">（<%= instruction['read_at'] ? Time.parse(instruction['read_at']).strftime("%Y-%m-%d %H:%M") : "不明" %>）</span>
@@ -10,7 +11,23 @@
       <button type="submit">アドバイスを読みました</button>
       </form>
     <% end %>
+    <div class="replies">
+      <% instruction['replies'].each do |reply| %>
+        <div class="reply">
+          <p><%= reply['content'] %>
+          <span class="reply-date">（<%= Time.parse(reply['created_at']).strftime("%Y-%m-%d %H:%M") %>）</span></p>
+        </div>
+      <% end %>
+    </div>
   </div>
+  <div class="reply-form">
+    <form action="/instructions/<%= instruction['id'] %>/reply" method="post">
+      <textarea name="content" placeholder="アドバイスへの返信を入力" style="margin-top: 10px; width: 50%; height: 50px;"></textarea>
+      <p><button type="submit">返信</button></p>
+    </form>
+  </div>
+  <hr>
+  <% x += 1 %>
 <% end %>
 
 
