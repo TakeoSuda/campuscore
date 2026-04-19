@@ -141,7 +141,7 @@ get '/users_info' do
       diary_entries.content AS d_content, diary_entries.date AS d_date,
       consults.content AS c_content, consults.date AS c_date,
       instructions.content AS i_content, instructions.created_at AS i_created_at,
-      instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at
+      instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at, instruction_replies.user_id AS ir_user_id
     FROM users 
     LEFT JOIN plans ON users.id = plans.user_id 
     LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
@@ -162,11 +162,11 @@ get '/users_info' do
     users_hash[uid]['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'] } if row['p_subject']
     users_hash[uid]['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     users_hash[uid]['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
-    users_hash[uid]['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'] } if row['i_content']
+    users_hash[uid]['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
   end
 
   @users = users_hash.values.map do |u|
-    u['plans'].uniq!; u['diaries'].uniq!; u['consults'].uniq!; u['instructions'].uniq!;
+    u['plans'].uniq!; u['diaries'].uniq!; u['consults'].uniq!; u['instructions'].uniq!
     u
   end
 
@@ -189,7 +189,7 @@ get '/users_info/:id' do
            diary_entries.content AS d_content, diary_entries.date AS d_date,
            consults.content AS c_content, consults.date AS c_date,
            instructions.content AS i_content, instructions.created_at AS i_created_at,
-           instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at
+           instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at, instruction_replies.user_id AS ir_user_id
     FROM users 
     LEFT JOIN plans ON users.id = plans.user_id 
     LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
@@ -208,7 +208,7 @@ get '/users_info/:id' do
     user_data['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'] } if row['p_subject']
     user_data['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     user_data['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
-    user_data['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'] } if row['i_content']
+    user_data['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
   end
 
   # 重複削除
