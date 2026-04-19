@@ -168,6 +168,45 @@ get '/users_info' do
   erb :users_info
 end
 
+# 個別ユーザーの詳細表示
+get '/users_info/:id' do
+  redirect '/login' unless session[:user_id]
+  user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless user
+  redirect '/' unless user["is_admin"].to_s == 't'
+    
+  target_id = params[:id]
+
+  # 特定のユーザー1人分だけをJOINで取得
+  raw_data = client.exec_params("
+    SELECT users.*, 
+           plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status,
+           diary_entries.content AS d_content, diary_entries.date AS d_date,
+           consults.content AS c_content, consults.date AS c_date
+    FROM users 
+    LEFT JOIN plans ON users.id = plans.user_id 
+    LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
+    LEFT JOIN consults ON users.id = consults.user_id
+    WHERE users.id = $1
+  ", [target_id]).to_a
+
+  halt 404 if raw_data.empty?
+
+  # 1人分のデータを整理（前のロジックを活用）
+  user_data = raw_data.first.merge({ 'plans' => [], 'diaries' => [], 'consults' => [] })
+  
+  raw_data.each do |row|
+    user_data['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'] } if row['p_subject']
+    user_data['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
+    user_data['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
+  end
+
+  # 重複削除
+  user_data['plans'].uniq!; user_data['diaries'].uniq!; user_data['consults'].uniq!
+  
+  @user = user_data
+  erb :user_detail # 新しいViewファイル
+end
 
 get '/logout' do
   session.clear

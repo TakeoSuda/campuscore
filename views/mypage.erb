@@ -35,6 +35,12 @@
         <h3>学習アドバイスを作る</h3>
       </a>
       <% end %>
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/users_info" class="nav-card accent-card">
+        <div class="icon">🖥️</div>
+        <h3>全ユーザー情報を確認</h3>
+      </a>
+      <% end %>
 
     <%# <a href="/chat_rooms" class="nav-card">
       <div class="icon">💬</div>

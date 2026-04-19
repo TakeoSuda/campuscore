@@ -1,6 +1,14 @@
+<h1>全ユーザー情報</h1>
+<div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
+<% @users.each do |user| %>
+    <p><a href="/users_info/<%= user['id'] %>"><%= user['name'] %></a></p>
+<% end %>
+</div>
+
+<h1>ユーザー詳細</h1>
 <% @users.each do |user| %>
     <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
-        <h1><%= user['name'] %>さんの情報</h1>
+        <h1><a href="/users_info/<%= user['id'] %>"><%= user['name'] %>さんの情報</a></h1>
         <p>カナ: <%= user['name_kana'] %></p>
         <p>ID: <%= user['id'] %></p>
         <p>メールアドレス: <%= user['email'] %></p>
