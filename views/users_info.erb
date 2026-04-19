@@ -1,7 +1,11 @@
 <h1>全ユーザー情報</h1>
 <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
+<% x = 1 %>
 <% @users.each do |user| %>
-    <p><a href="/users_info/<%= user['id'] %>"><%= user['name'] %></a></p>
+    <p>
+    <%= x %>:
+    <a href="/users_info/<%= user['id'] %>"><%= user['name'] %></a></p>
+    <% x += 1 %>
 <% end %>
 </div>
 
