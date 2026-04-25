@@ -1,33 +1,35 @@
-<h1>学習アドバイス一覧</h1>
+<h1 style="margin-bottom:0.5em;">学習アドバイス一覧</h1>
 <% x=1 %>
 <% @instructions.each do |instruction| %>
+<div style="border: 2px solid #1111D4;">
   <div class="instruction">
-      <h3><%= x %>. <%= instruction['category'] %></h3>
-      <p><%= instruction['content'] %>
+      <h3 style= "background-color: #1111D4; color: white; padding: 5px; margin: 0;"><%= x %>. <%= instruction['category'] %></h3>
+      <p style= "padding-left: 10px; padding-right: 10px;"><%= instruction['content'] %>
         <span class="created-at">（<%= Time.parse(instruction['created_at']).strftime("%Y-%m-%d %H:%M") %>）</span></p>
       </p>
     <% if instruction['read_record_id'] %>
       <span class="badge">既読</span><span class="read-date">（<%= instruction['read_at'] ? Time.parse(instruction['read_at']).strftime("%Y-%m-%d %H:%M") : "不明" %>）</span>
     <% else %>
-      <form action="/instructions/<%= instruction['id'] %>/read" method="post">
+      <form style= "padding-left: 10px; padding-right: 10px;" action="/instructions/<%= instruction['id'] %>/read" method="post">
       <button type="submit">アドバイスを読みました</button>
       </form>
     <% end %>
-    <div class="replies">
+    <div class="replies" style= "padding-left: 10px; padding-right: 10px;">
       <% instruction['replies'].each do |reply| %>
-        <div class="reply">
+        <div class="reply" style= "padding-left: 10px; padding-right: 10px;">
           <p><%= reply['content'] %>
           <span class="reply-date">（<%= Time.parse(reply['created_at']).strftime("%Y-%m-%d %H:%M") %>）</span></p>
         </div>
       <% end %>
     </div>
   </div>
-  <div class="reply-form">
+  <div class="reply-form" style= "padding-left: 10px; padding-right: 10px;">
     <form action="/instructions/<%= instruction['id'] %>/reply" method="post">
-      <textarea name="content" placeholder="アドバイスへの返信を入力" style="margin-top: 10px; width: 50%; height: 50px;"></textarea>
-      <p><button type="submit">返信</button></p>
+      <textarea name="content" placeholder="アドバイスへの返信を入力" style="margin-top: 1.5em; width: 50%; height: 50px;"></textarea>
+      <p style="margin-top: 0.5em; margin-bottom: 1em;"><button type="submit">返信</button></p>
     </form>
   </div>
+</div>
   <hr>
   <% x += 1 %>
 <% end %>
