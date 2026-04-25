@@ -80,6 +80,9 @@ GEM
     puma (7.2.0)
       nio4r (~> 2.0)
     rack (3.2.5)
+    rack-cors (3.0.0)
+      logger
+      rack (>= 3.0.14)
     rack-flash3 (1.0.5)
       rack
     rack-protection (4.2.1)
@@ -143,6 +146,7 @@ DEPENDENCIES
   pg
   pony
   puma
+  rack-cors
   rack-flash3
   racksh
   rake
@@ -192,6 +196,7 @@ CHECKSUMS
   psych (5.3.1) sha256=eb7a57cef10c9d70173ff74e739d843ac3b2c019a003de48447b2963d81b1974
   puma (7.2.0) sha256=bf8ef4ab514a4e6d4554cb4326b2004eba5036ae05cf765cfe51aba9706a72a8
   rack (3.2.5) sha256=4cbd0974c0b79f7a139b4812004a62e4c60b145cba76422e288ee670601ed6d3
+  rack-cors (3.0.0) sha256=7b95be61db39606906b61b83bd7203fa802b0ceaaad8fcb2fef39e097bf53f68
   rack-flash3 (1.0.5) sha256=1f57e26429d7987fdb3c65a2f0da95717bed99ad3e5e45d847da689b9d4a3566
   rack-protection (4.2.1) sha256=cf6e2842df8c55f5e4d1a4be015e603e19e9bc3a7178bae58949ccbb58558bac
   rack-session (2.1.1) sha256=0b6dc07dea7e4b583f58a48e8b806d4c9f1c6c9214ebc202ec94562cbea2e4e9
