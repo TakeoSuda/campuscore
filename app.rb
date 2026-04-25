@@ -4,6 +4,25 @@ require 'bcrypt'
 require 'pony'
 require 'securerandom'
 require 'sinatra/cookies'
+require 'json' # JSONを扱うために必要
+require 'rack/cors' # 読み込みを忘れずに
+
+# --- 修正後のセキュリティ設定 ---
+
+# 1. 全体的な保護機能を有効に戻す
+enable :protection
+
+# 2. React(ポート5174)からの通信で発生する「怪しい」と判定されやすい項目だけを例外にする
+set :protection, :except => [:http_origin, :remote_token, :session_hijacking]
+
+use Rack::Cors do
+  allow do
+    # Reactが動いているURLを正確に指定
+    origins 'http://localhost:5174'
+    # 全てのAPIエンドポイント、全てのヘッダー、POSTを含むメソッドを許可
+    resource '*', headers: :any, methods: [:get, :post, :options]
+  end
+end
 
 # --- 1. データベース接続設定 (一箇所に集約) ---
 db_url = ENV['DATABASE_URL']
@@ -36,11 +55,61 @@ before do
     '/signup', 
     '/password_reset', 
     '/password_reset/edit', 
-    '/password_reset/update'
+    '/password_reset/update',
+    '/api/quiz_results' # ← 【ここを追加！】ReactからのPOSTリクエストもログインなしで受け取れるようにする
   ]
   
   if session[:user_id].nil? && !pass_list.include?(request.path_info)
     redirect '/'
+  end
+end
+
+# ReactからのPOSTリクエストを受け取る窓口
+post '/api/quiz_results' do
+  # 1. データの受信設定
+  content_type :json
+  
+  begin
+    # 2. Reactから届いたJSONをRubyのハッシュに変換
+    payload = JSON.parse(request.body.read)
+    
+    # 【チェック！】ターミナルに中身を表示させる
+  puts "受け取ったデータ: #{payload.inspect}"
+    
+    user_id = payload['user_id']
+    results = payload['results'] # クイズ結果の配列
+
+  puts "resultsの中身: #{results.inspect}" # ここが [] だと保存されません
+
+    # 3. データベースに接続
+    # Render環境なら ENV['DATABASE_URL'] を使い、ローカルなら自分のDB名を入れる
+    db_config = ENV['DATABASE_URL'] || { dbname: 'campus_db_34pr' }
+    client = PG.connect(db_config)
+
+    # 4. 各問題の結果を1つずつ保存（INSERT）
+    results.each do |res|
+      client.exec_params(
+        "INSERT INTO quiz_results (user_id, question_text, user_answer, is_correct) VALUES ($1, $2, $3, $4)",
+        [
+          user_id,
+          res['questionText'], # React側のプロパティ名に合わせる
+          res['userAnswer'],
+          res['isCorrect']
+        ]
+      )
+    end
+
+    # 5. 成功したことをReactに伝える
+    status 200
+    { message: "保存が完了しました" }.to_json
+
+  rescue => e
+    # エラーが起きた場合
+    status 500
+    { error: e.message }.to_json
+  ensure
+    # 6. 最後に必ずDB接続を閉じる
+    client.close if client
   end
 end
 
@@ -743,7 +812,7 @@ post '/instructions/new' do
 client.exec_params(
     "INSERT INTO instructions (content, category, user_id, created_at, updated_at) 
      VALUES ($1, $2, $3, NOW(), NOW())",
-    [params[:content], params[:category], params[:user_id]]
+    [params[:content], params[:category], target_user_id]
   )
 
   redirect '/instructions'

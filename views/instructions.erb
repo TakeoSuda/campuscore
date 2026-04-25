@@ -3,7 +3,9 @@
 <% @instructions.each do |instruction| %>
   <div class="instruction">
       <h3><%= x %>. <%= instruction['category'] %></h3>
-      <p><%= instruction['content'] %></p>
+      <p><%= instruction['content'] %>
+        <span class="created-at">（<%= Time.parse(instruction['created_at']).strftime("%Y-%m-%d %H:%M") %>）</span></p>
+      </p>
     <% if instruction['read_record_id'] %>
       <span class="badge">既読</span><span class="read-date">（<%= instruction['read_at'] ? Time.parse(instruction['read_at']).strftime("%Y-%m-%d %H:%M") : "不明" %>）</span>
     <% else %>
