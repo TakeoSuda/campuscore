@@ -206,7 +206,7 @@ get '/users_info' do
   raw_data = client.exec_params("
     SELECT 
       users.*, 
-      plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status,
+      plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status, plans.start_date AS p_start_date, plans.end_date AS p_end_date,
       diary_entries.content AS d_content, diary_entries.date AS d_date,
       consults.content AS c_content, consults.date AS c_date,
       instructions.content AS i_content, instructions.created_at AS i_created_at,
@@ -228,7 +228,7 @@ get '/users_info' do
     end
 
     # 重複を避けつつデータを追加（IDなどで判定するのが理想ですが、簡易的に内容で判定）
-    users_hash[uid]['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'] } if row['p_subject']
+    users_hash[uid]['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'], 'start_date' => row['p_start_date'], 'end_date' => row['p_end_date'] } if row['p_subject']
     users_hash[uid]['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     users_hash[uid]['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
     users_hash[uid]['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
@@ -254,7 +254,7 @@ get '/users_info/:id' do
   # 特定のユーザー1人分だけをJOINで取得
   raw_data = client.exec_params("
     SELECT users.*, 
-           plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status,
+           plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status, plans.start_date AS p_start_date, plans.end_date AS p_end_date,
            diary_entries.content AS d_content, diary_entries.date AS d_date,
            consults.content AS c_content, consults.date AS c_date,
            instructions.content AS i_content, instructions.created_at AS i_created_at,
@@ -274,7 +274,7 @@ get '/users_info/:id' do
   user_data = raw_data.first.merge({ 'plans' => [], 'diaries' => [], 'consults' => [], 'instructions' => [] })
   
   raw_data.each do |row|
-    user_data['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'] } if row['p_subject']
+    user_data['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'], 'start_date' => row['p_start_date'], 'end_date' => row['p_end_date'] }
     user_data['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     user_data['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
     user_data['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
