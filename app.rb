@@ -217,6 +217,7 @@ get '/users_info' do
     LEFT JOIN consults ON users.id = consults.user_id
     LEFT JOIN instructions ON users.id = instructions.user_id OR instructions.user_id IS NULL
     LEFT JOIN instruction_replies ON instructions.id = instruction_replies.instruction_id
+    ORDER BY users.name_kana ASC
   ").to_a
 
   # データをユーザーごとにグルーピングする
