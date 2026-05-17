@@ -236,6 +236,8 @@ get '/users_info' do
 
   @users = users_hash.values.map do |u|
     u['plans'].uniq!; u['diaries'].uniq!; u['consults'].uniq!; u['instructions'].uniq!
+    # 日記を日付順（新しい順）に並び替える【追加】
+    u['diaries'].sort_by! { |d| d['date'] }.reverse! if u['diaries']
     u
   end
 
