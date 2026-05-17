@@ -284,6 +284,7 @@ get '/users_info/:id' do
 
   # 重複削除
   user_data['plans'].uniq!; user_data['diaries'].uniq!; user_data['consults'].uniq!; user_data['instructions'].uniq!
+  user_data['diaries'].sort_by! { |d| d['date'] }.reverse! if user_data['diaries']
   
   @user = user_data
   erb :user_detail # 新しいViewファイル
