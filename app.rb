@@ -238,6 +238,10 @@ get '/users_info' do
     u['plans'].uniq!; u['diaries'].uniq!; u['consults'].uniq!; u['instructions'].uniq!
     # 日記を日付順（新しい順）に並び替える【追加】
     u['diaries'].sort_by! { |d| d['date'] }.reverse! if u['diaries']
+    # 相談を日付順（新しい順）に並び替える【追加】
+    u['consults'].sort_by! { |c| c['date'] }.reverse! if u['consults']
+    # 指示を日付順（新しい順）に並び替える【追加】
+    u['instructions'].sort_by! { |i| i['created_at'] }.reverse! if u['instructions']
     u
   end
 
@@ -285,7 +289,8 @@ get '/users_info/:id' do
   # 重複削除
   user_data['plans'].uniq!; user_data['diaries'].uniq!; user_data['consults'].uniq!; user_data['instructions'].uniq!
   user_data['diaries'].sort_by! { |d| d['date'] }.reverse! if user_data['diaries']
-  
+  user_data['consults'].sort_by! { |c| c['date'] }.reverse! if user_data['consults']
+  user_data['instructions'].sort_by! { |i| i['created_at'] }.reverse! if user_data['instructions']
   @user = user_data
   erb :user_detail # 新しいViewファイル
 end
