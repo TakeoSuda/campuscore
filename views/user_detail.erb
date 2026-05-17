@@ -84,6 +84,34 @@
                 <hr>
             <% end %>
         </div>
+        <div style="border: 1px solid #ccc; padding: 10px; margin-top: 20px;">
+            <h1>模試結果</h1>
+            <% @user['mock_exams'].each do |exam| %>
+                <p>受験日: <%= exam['taken_at'] %></p>
+                <p>英語リーディング: <%= exam['english_r'] %> 点</p>
+                <p>英語リスニング: <%= exam['english_l'] %> 点</p>
+                <p>数学ⅠA: <%= exam['math_1a'] %> 点</p>
+                <p>数学ⅡBC: <%= exam['math_2bc'] %> 点</p>
+                <p>国語: <%= exam['japanese'] %> 点</p>
+                <p>物理基礎: <%= exam['physics_basic'] %> 点</p>
+                <p>化学基礎: <%= exam['chemistry_basic'] %> 点</p>
+                <p>生物基礎: <%= exam['biology_basic'] %> 点</p>
+                <p>地学基礎: <%= exam['earth_science_basic'] %> 点</p>
+                <p>物理: <%= exam['physics'] %> 点</p>
+                <p>化学: <%= exam['chemistry'] %> 点</p>
+                <p>生物: <%= exam['biology'] %> 点</p>
+                <p>地学: <%= exam['earth_science'] %> 点</p>
+                <p>世界史: <%= exam['world_history'] %> 点</p>
+                <p>日本史: <%= exam['japanese_history'] %> 点</p>
+                <p>地理: <%= exam['geography'] %> 点</p>
+                <p>公共倫理: <%= exam['civics_ethics'] %> 点</p>
+                <p>公共政経: <%= exam['civics_politics'] %> 点</p>
+                <p>地理総合: <%= exam['geography_basic'] %> 点</p>
+                <p>歴史総合: <%= exam['history_basic'] %> 点</p>
+                <p>公共: <%= exam['civics_basic'] %> 点</p>
+                <p>情報: <%= exam['informatics'] %> 点</p>
+                <hr>
+            <% end %>
     </div>
 
 <a href="/mypage">戻る</a>

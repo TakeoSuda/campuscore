@@ -265,33 +265,38 @@ get '/users_info/:id' do
            diary_entries.content AS d_content, diary_entries.date AS d_date,
            consults.content AS c_content, consults.date AS c_date,
            instructions.content AS i_content, instructions.created_at AS i_created_at,
-           instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at, instruction_replies.user_id AS ir_user_id
+           instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at, instruction_replies.user_id AS ir_user_id,
+          mock_exams.english_r AS me_english_r, mock_exams.english_l AS me_english_l, mock_exams.math_1a AS me_math_1a, mock_exams.math_2bc AS me_math_2bc, mock_exams.japanese AS me_japanese, mock_exams.physics_basic AS me_physics_basic, mock_exams.chemistry_basic AS me_chemistry_basic, mock_exams.biology_basic AS me_biology_basic, mock_exams.earth_science_basic AS me_earth_science_basic, mock_exams.physics AS me_physics, mock_exams.chemistry AS me_chemistry, mock_exams.biology AS me_biology, mock_exams.earth_science AS me_earth_science, mock_exams.world_history AS me_world_history, mock_exams.japanese_history AS me_japanese_history, mock_exams.geography AS me_geography, mock_exams.civics_ethics AS me_civics_ethics, mock_exams.civics_politics AS me_civics_politics, mock_exams.geography_basic AS me_geography_basic, mock_exams.history_basic AS me_history_basic, mock_exams.civics_basic AS me_civics_basic, mock_exams.informatics AS me_informatics, mock_exams.taken_at AS me_taken_at
     FROM users 
     LEFT JOIN plans ON users.id = plans.user_id 
     LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
     LEFT JOIN consults ON users.id = consults.user_id
     LEFT JOIN instructions ON users.id = instructions.user_id OR instructions.user_id IS NULL
     LEFT JOIN instruction_replies ON instructions.id = instruction_replies.instruction_id
+    LEFT JOIN mock_exams ON users.id = mock_exams.user_id
     WHERE users.id = $1
   ", [target_id]).to_a
 
   halt 404 if raw_data.empty?
 
   # 1人分のデータを整理（前のロジックを活用）
-  user_data = raw_data.first.merge({ 'plans' => [], 'diaries' => [], 'consults' => [], 'instructions' => [] })
+  user_data = raw_data.first.merge({ 'plans' => [], 'diaries' => [], 'consults' => [], 'instructions' => [], 'mock_exams' => [] })
   
   raw_data.each do |row|
     user_data['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'], 'start_date' => row['p_start_date'], 'end_date' => row['p_end_date'] }
     user_data['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     user_data['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
     user_data['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
+    user_data['mock_exams'] << { 'english_r' => row['me_english_r'], 'english_l' => row['me_english_l'], 'math_1a' => row['me_math_1a'], 'math_2bc' => row['me_math_2bc'], 'japanese' => row['me_japanese'], 'physics_basic' => row['me_physics_basic'], 'chemistry_basic' => row['me_chemistry_basic'], 'biology_basic' => row['me_biology_basic'], 'earth_science_basic' => row['me_earth_science_basic'], 'physics' => row['me_physics'], 'chemistry' => row['me_chemistry'], 'biology' => row['me_biology'], 'earth_science' => row['me_earth_science'], 'world_history' => row['me_world_history'], 'japanese_history' => row['me_japanese_history'], 'geography' => row['me_geography'], 'civics_ethics' => row['me_civics_ethics'], 'civics_politics' => row['me_civics_politics'], 'geography_basic' => row['me_geography_basic'], 'history_basic' => row['me_history_basic'], 'civics_basic' => row['me_civics_basic'], 'informatics' => row['me_informatics'], 'taken_at' => row['me_taken_at']} if row['me_english_r']
   end
 
+
   # 重複削除
-  user_data['plans'].uniq!; user_data['diaries'].uniq!; user_data['consults'].uniq!; user_data['instructions'].uniq!
+  user_data['plans'].uniq!; user_data['diaries'].uniq!; user_data['consults'].uniq!; user_data['instructions'].uniq!; user_data['mock_exams'].uniq!
   user_data['diaries'].sort_by! { |d| d['date'] }.reverse! if user_data['diaries']
   user_data['consults'].sort_by! { |c| c['date'] }.reverse! if user_data['consults']
   user_data['instructions'].sort_by! { |i| i['created_at'] }.reverse! if user_data['instructions']
+  user_data['mock_exams'].sort_by! { |m| m['taken_at'] }.reverse! if user_data['mock_exams']
   @user = user_data
   erb :user_detail # 新しいViewファイル
 end
