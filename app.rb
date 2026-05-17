@@ -840,3 +840,51 @@ post '/instructions/:id/reply' do
   redirect "/instructions"
 end
 
+# 模試結果入力関係
+
+get '/mock_exams' do
+
+  user_id = session[:user_id]
+  @mock_exams = client.exec_params(
+    "SELECT * FROM mock_exams WHERE user_id = $1 ORDER BY taken_at DESC",
+    [user_id]
+  ).to_a
+
+
+
+  erb :mock_exams
+end
+
+post '/mock_exams/new' do
+  user_id = session[:user_id]
+  english_r = params[:english_r].to_i
+  english_l = params[:english_l].to_i
+  math_1a = params[:math_1a].to_i
+  math_2bc = params[:math_2bc].to_i
+  japanese = params[:japanese].to_i
+  physics_basic = params[:physics_basic].to_i
+  chemistry_basic = params[:chemistry_basic].to_i
+  biology_basic = params[:biology_basic].to_i
+  earth_science_basic = params[:earth_science_basic].to_i
+  physics = params[:physics].to_i
+  chemistry = params[:chemistry].to_i
+  biology = params[:biology].to_i
+  earth_science = params[:earth_science].to_i
+  world_history = params[:world_history].to_i
+  japanese_history = params[:japanese_history].to_i
+  geography = params[:geography].to_i
+  civics_ethics = params[:civics_ethics].to_i
+  civics_politics = params[:civics_politics].to_i
+  geography_basic = params[:geography_basic].to_i
+  history_basic = params[:history_basic].to_i
+  civics_basic = params[:civics_basic].to_i
+  informatics = params[:informatics].to_i
+  taken_at = params[:taken_at]
+
+  client.exec_params(
+    "INSERT INTO mock_exams (user_id, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)",
+    [user_id, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at]
+  )
+
+  redirect '/mock_exams'
+end

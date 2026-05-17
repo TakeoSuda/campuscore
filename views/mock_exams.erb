@@ -1,0 +1,156 @@
+<h1>模試結果</h1>
+
+<h2>模試結果を入力する</h2>
+<form action="/mock_exams/new" method="post">
+    <div>
+        <label for="taken_at">受験日:</label>
+        <input type="date" name="taken_at" id="taken_at" placeholder="受験日" required>
+    </div>
+
+    <div>
+        <label for="english_r">英語R:</label>
+        <input type="number" name="english_r" id="english_r" placeholder="英語R"><span> 点</span>
+    </div>
+    <div>
+        <label for="english_l">英語L:</label>
+        <input type="number" name="english_l" id="english_l" placeholder="英語L"><span> 点</span>
+    </div>
+    
+
+    <div>
+        <label for="math_1a">数学1A:</label>
+        <input type="number" name="math_1a" id="math_1a" placeholder="数学1A"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="math_2bc">数学2BC:</label>
+        <input type="number" name="math_2bc" id="math_2bc" placeholder="数学2BC"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="japanese">国語:</label>
+        <input type="number" name="japanese" id="japanese" placeholder="国語"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="physics_basic">物理基礎:</label>
+        <input type="number" name="physics_basic" id="physics_basic" placeholder="物理基礎"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="chemistry_basic">化学基礎:</label>
+        <input type="number" name="chemistry_basic" id="chemistry_basic" placeholder="化学基礎"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="biology_basic">生物基礎:</label>
+        <input type="number" name="biology_basic" id="biology_basic" placeholder="生物基礎"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="earth_science_basic">地学基礎:</label>
+        <input type="number" name="earth_science_basic" id="earth_science_basic" placeholder="地学基礎"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="physics">物理:</label>
+        <input type="number" name="physics" id="physics" placeholder="物理"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="chemistry">化学:</label>
+        <input type="number" name="chemistry" id="chemistry" placeholder="化学"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="biology">生物:</label>
+        <input type="number" name="biology" id="biology" placeholder="生物"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="earth_science">地学:</label>
+        <input type="number" name="earth_science" id="earth_science" placeholder="地学"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="world_history">世界史:</label>
+        <input type="number" name="world_history" id="world_history" placeholder="世界史"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="japanese_history">日本史:</label>
+        <input type="number" name="japanese_history" id="japanese_history" placeholder="日本史"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="geography">地理:</label>
+        <input type="number" name="geography" id="geography" placeholder="地理"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="civics_ethics">公共・倫理:</label>
+        <input type="number" name="civics_ethics" id="civics_ethics" placeholder="公共・倫理"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="civics_politics">公共・政経:</label>
+        <input type="number" name="civics_politics" id="civics_politics" placeholder="公共・政経"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="geography_basic">地理総合:</label>
+        <input type="number" name="geography_basic" id="geography_basic" placeholder="地理総合"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="history_basic">歴史総合:</label>
+        <input type="number" name="history_basic" id="history_basic" placeholder="歴史総合"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="civics_basic">公共:</label>
+        <input type="number" name="civics_basic" id="civics_basic" placeholder="公共"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="informatics">情報:</label>
+        <input type="number" name="informatics" id="informatics" placeholder="情報"><span> 点</span>
+    </div>
+
+    <input type="submit" value="保存">
+</form>
+
+<br>
+
+<div>
+    <h2>過去の模試結果</h2>
+<% @mock_exams.each do |exam| %>
+  <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
+    <p>受験日: <%= exam['taken_at'] %></p>
+    <p>英語R: <%= exam['english_r'] %><span> 点</span></p>
+    <p>英語L: <%= exam['english_l'] %><span> 点</span></p>
+    <p>数学1A: <%= exam['math_1a'] %><span> 点</span></p>
+    <p>数学2BC: <%= exam['math_2bc'] %><span> 点</span></p>
+    <p>国語: <%= exam['japanese'] %><span> 点</span></p>
+    <p>物理基礎: <%= exam['physics_basic'] %><span> 点</span></p>
+    <p>化学基礎: <%= exam['chemistry_basic'] %><span> 点</span></p>
+    <p>生物基礎: <%= exam['biology_basic'] %><span> 点</span></p>
+    <p>地学基礎: <%= exam['earth_science_basic'] %><span> 点</span></p>
+    <p>物理: <%= exam['physics'] %><span> 点</span></p>
+    <p>化学: <%= exam['chemistry'] %><span> 点</span></p>
+    <p>生物: <%= exam['biology'] %><span> 点</span></p>
+    <p>地学: <%= exam['earth_science'] %><span> 点</span></p>
+    <p>世界史: <%= exam['world_history'] %><span> 点</span></p>
+    <p>日本史: <%= exam['japanese_history'] %><span> 点</span></p>
+    <p>地理: <%= exam['geography'] %><span> 点</span></p>
+    <p>公共・倫理: <%= exam['civics_ethics'] %><span> 点</span></p>
+    <p>公共・政経: <%= exam['civics_politics'] %><span> 点</span></p>
+    <p>地理総合: <%= exam['geography_basic'] %><span> 点</span></p>
+    <p>歴史総合: <%= exam['history_basic'] %><span> 点</span></p>
+    <p>公共: <%= exam['civics_basic'] %><span> 点</span></p>
+    <p>情報: <%= exam['informatics'] %><span> 点</span></p>
+  </div>
+<% end %>
+<div>
+  <a href="/mypage">マイページに戻る</a>
+</div>
