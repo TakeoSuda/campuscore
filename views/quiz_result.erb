@@ -1,0 +1,27 @@
+<h1>オンライン英語テスト結果</h1>
+<p>あなたの正解数は <%= @correct_answers.length %> 問です！</p>
+<p>正解率は <%= @accuracy_rate %> % です！</p>
+<p>正解した問題:</p>
+<ul>
+  <% @correct_answers.each do |answer| %>
+    <li>問題番号: <%= answer["id"] %></li>
+    <li><%= answer["question_text"] %></li>
+    <li>あなたの回答: <%= answer["selected_option"] %></li>
+    <li>正解: <%= answer["correct_option"] %></li>
+    <li>回答日時：<%= Time.parse(answer["answered_at"]).strftime("%Y-%m-%d %H:%M") %></li>
+    <hr>
+  <% end %>
+</ul>
+<p>不正解だった問題:</p>
+<ul>
+  <% @wrong_answers.each do |answer| %>
+    <li>問題番号: <%= answer["id"] %></li>
+    <li><%= answer["question_text"] %></li>
+    <li>あなたの回答: <%= answer["selected_option"] %></li>
+    <li>正解: <%= answer["correct_option"] %></li>
+    <li>回答日時：<%= Time.parse(answer["answered_at"]).strftime("%Y-%m-%d %H:%M") %></li>
+    <hr>
+  <% end %>
+</ul>
+
+<a href="/mypage">マイページに戻る</a>

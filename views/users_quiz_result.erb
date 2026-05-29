@@ -1,0 +1,34 @@
+<h1 style="padding: 15px">ユーザー別・単元ごと得点率一覧</h1>
+
+<% @user_stats.each do |user_name, categories| %>
+  <div class="user-report-card" style="border: 1px solid #ccc; border-radius: 15px; padding: 15px; margin-bottom: 20px;">
+    <h2>👤 ユーザー名: <%= user_name %> さんの成績</h2>
+    
+    <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">
+      <thead>
+        <tr style="background-color: #f2f2f2;">
+          <th>単元（カテゴリー）</th>
+          <th>正解数 / 総問題数</th>
+          <th>得点率（%）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% categories.each do |category_name, score| %>
+          <% 
+            # 得点率の計算（0除算対策つき）
+            accuracy_rate = score[:total] > 0 ? (score[:correct].to_f / score[:total] * 100).round(1) : 0 
+          %>
+          <tr>
+            <td><strong><%= category_name %></strong></td>
+            <td><%= score[:correct] %> / <%= score[:total] %> 問</td>
+            <td>
+              <span style="font-weight: bold; color: <%= accuracy_rate >= 80 ? 'green' : 'black' %>;">
+                <%= accuracy_rate %> %
+              </span>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

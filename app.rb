@@ -893,3 +893,123 @@ post '/mock_exams/new' do
 
   redirect '/mock_exams'
 end
+
+
+# オンライン試験関係
+get '/quiz_select' do
+  erb :quiz_select
+end
+
+get '/quiz/:category' do
+  user_id = session[:user_id]
+  @quiz = client.exec_params(
+    "SELECT * FROM english_questions WHERE category = $1 ORDER BY id ASC LIMIT 10 OFFSET 46",
+    [params[:category]]
+  ).to_a
+
+  erb :quiz
+end
+
+post '/quiz/submit' do
+  user_id = session[:user_id]
+  user_answers = params["answers"]
+  @correct_count = 0  # 正解数を数えるカウンター
+
+  if user_answers
+    # ループは1回だけでOK！
+    user_answers.each do |_index, data|
+      question_id = data["id"].to_i
+      chosen_option = data["chosen"].to_i
+
+      # 1. データベースから、その問題の「本当の正解」を取得する
+      question = client.exec_params(
+        "SELECT correct_option FROM english_questions WHERE id = $1", 
+        [question_id]
+      ).first
+
+      # 2. ユーザーの回答と正解が一致しているか判定し、true か false を決める
+      is_correct = false
+      if question && question["correct_option"].to_i == chosen_option
+        is_correct = true
+        @correct_count += 1  # 正解だったらカウントを増やす
+      end
+
+      # 3. 「誰が」「どの問題に」「何と答え」「正解したか」を1回でインサートする！
+      client.exec_params(
+        "INSERT INTO answer_logs (user_id, question_id, selected_option, is_correct, answered_at) 
+         VALUES ($1, $2, $3, $4, NOW())",
+        [user_id, question_id, chosen_option, is_correct]
+      )
+    end
+  end
+
+  redirect '/quiz_result'
+end
+
+get '/quiz_result' do
+  user_id = session[:user_id]
+
+  @correct_answers = client.exec_params(
+    "SELECT q.id, q.question_text, q.correct_option, al.selected_option, al.answered_at 
+     FROM answer_logs al
+     JOIN english_questions q ON al.question_id = q.id
+     WHERE al.user_id = $1 AND al.is_correct = true
+     ORDER BY al.answered_at DESC
+     LIMIT 10",
+    [user_id]
+  ).to_a
+
+  @wrong_answers = client.exec_params(
+    "SELECT q.id, q.question_text, q.correct_option, al.selected_option, al.answered_at 
+     FROM answer_logs al
+     JOIN english_questions q ON al.question_id = q.id
+     WHERE al.user_id = $1 AND al.is_correct = false
+     ORDER BY al.answered_at DESC
+     LIMIT 10",
+    [user_id]
+  ).to_a
+  
+  @total_count = @correct_answers.length + @wrong_answers.length
+
+  @accuracy_rate = @total_count > 0 ? (@correct_answers.length.to_f / @total_count * 100).round(2) : 0
+
+  erb :quiz_result
+end
+
+#全生徒のオンラインテストの成績表示
+get '/users_quiz_result' do
+  # 管理者かどうかのチェック
+  user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless user
+  redirect '/' unless user["is_admin"].to_s == 't'
+
+  # 💡 q.category を追加しました
+  @results = client.exec_params(
+    "SELECT u.name AS user_name, q.category, q.question_text, al.selected_option, al.is_correct, al.answered_at 
+     FROM answer_logs al
+     JOIN english_questions q ON al.question_id = q.id
+     JOIN users u ON al.user_id = u.id
+     ORDER BY al.answered_at DESC"
+  ).to_a
+
+  # ユーザーごと、単元ごとの点数を集計するための空のハッシュを用意
+  # 構造イメージ: { "ユーザー名" => { "単元名" => { correct: 0, total: 0 } } }
+  @user_stats = Hash.new { |h, k| h[k] = Hash.new { |sh, sk| sh[sk] = { correct: 0, total: 0 } } }
+
+  @results.each do |row|
+    user = row["user_name"]
+    category = row["category"]
+    is_correct = row["is_correct"] == "t" # PostgreSQLのboolean型は文字列の"t"か"f"で届くことが多いです
+
+    # 全体数を+1
+    @user_stats[user][category][:total] += 1
+    # 正解だったら正解数を+1
+    @user_stats[user][category][:correct] += 1 if is_correct
+  end
+
+  erb :users_quiz_result
+end
+
+
+
+

@@ -33,7 +33,11 @@
         <div class="icon">📊</div>
         <h3>模試結果を見る・入力する</h3>
       </a>
-      
+      <a href="/quiz_select" class="nav-card">
+        <div class="icon">👓</div>
+        <h3>オンライン英語試験を受ける</h3>
+      </a>
+
       <% if @is_admin == true || @is_admin == 't' %>
       <a href="/instructions/new" class="nav-card accent-card">
         <div class="icon">➕</div>
@@ -44,6 +48,12 @@
       <a href="/users_info" class="nav-card accent-card">
         <div class="icon">🖥️</div>
         <h3>全ユーザー情報を確認</h3>
+      </a>
+      <% end %>
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/users_quiz_result" class="nav-card accent-card">
+        <div class="icon">📁</div>
+        <h3>全ユーザーの試験結果を確認</h3>
       </a>
       <% end %>
 
