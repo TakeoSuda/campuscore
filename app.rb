@@ -903,7 +903,7 @@ end
 get '/quiz/:category' do
   user_id = session[:user_id]
   @quiz = client.exec_params(
-    "SELECT * FROM english_questions WHERE category = $1 ORDER BY id ASC LIMIT 10 OFFSET 46",
+    "SELECT * FROM english_questions WHERE category = $1 ORDER BY id ASC LIMIT 20 OFFSET 46",
     [params[:category]]
   ).to_a
 
@@ -955,7 +955,7 @@ get '/quiz_result' do
      JOIN english_questions q ON al.question_id = q.id
      WHERE al.user_id = $1 AND al.is_correct = true
      ORDER BY al.answered_at DESC
-     LIMIT 10",
+     LIMIT 20",
     [user_id]
   ).to_a
 
@@ -965,7 +965,7 @@ get '/quiz_result' do
      JOIN english_questions q ON al.question_id = q.id
      WHERE al.user_id = $1 AND al.is_correct = false
      ORDER BY al.answered_at DESC
-     LIMIT 10",
+     LIMIT 20",
     [user_id]
   ).to_a
   
