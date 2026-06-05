@@ -1,0 +1,44 @@
+<div class="container" style="padding: 20px; font-family: sans-serif;">
+  <h1>📝 文法テスト作成コンソール</h1>
+  <p>テストに含めたい問題にチェックを入れて、「テストを作成する」ボタンを押してください。</p>
+
+  <% if @error %>
+    <div style="color: red; font-weight: bold; margin-bottom: 15px;"><%= @error %></div>
+  <% end %>
+
+  <form action="/admin/save-test" method="POST">
+    <div style="margin-bottom: 20px;">
+      <label style="font-weight: bold;">テスト名: </label>
+      <input type="text" name="test_name" placeholder="例: 6月2日 中間テスト" style="padding: 5px; width: 300px;" required>
+    </div>
+
+    <table border="1" style="border-collapse: collapse; width: 100%; text-align: left;">
+      <thead>
+        <tr style="background-color: #f2f2f2;">
+          <th style="padding: 10px; width: 50px; text-align: center;">選択</th>
+          <th style="padding: 10px; width: 80px; text-align: center;">ID</th>
+          <th style="padding: 10px; width: 150px;">単元（カテゴリー）</th>
+          <th style="padding: 10px;">問題文</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @questions.each do |question| %>
+          <tr>
+            <td style="padding: 10px; text-align: center;">
+              <input type="checkbox" name="question_ids[]" value="<%= question["id"] %>" style="transform: scale(1.2); cursor: pointer;">
+            </td>
+            <td style="padding: 10px; text-align: center;"><%= question["id"] %></td>
+            <td style="padding: 10px;"><span class="badge" style="background: #e0e0e0; padding: 2px 6px; border-radius: 4px;"><%= question["category"] %></span></td>
+            <td style="padding: 10px;"><strong><%= question["question_text"] %></strong></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <div style="margin-top: 20px; text-align: right;">
+      <button type="submit" style="padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        🚀 選択した問題でテストを作成する
+      </button>
+    </div>
+  </form>
+</div>

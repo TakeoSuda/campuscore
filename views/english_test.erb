@@ -1,0 +1,32 @@
+<h1>オンライン英語試験</h1>
+<form action="/english_test/<%= params[:id] %>/submit" method="post">
+  <% @questions.each_with_index do |question, index| %>
+    <div style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+      <p><strong>問<%= index + 1 %>:</strong> <%= question["question_text"] %></p>
+      
+      <input type="hidden" name="answers[<%= index %>][id]" value="<%= question["id"] %>">
+
+      <label>
+        <input type="radio" name="answers[<%= index %>][chosen]" value="1" required>
+        ① <%= question["option_1"] %>
+      </label><br>
+      
+      <label>
+        <input type="radio" name="answers[<%= index %>][chosen]" value="2">
+        ② <%= question["option_2"] %>
+      </label><br>
+      
+      <label>
+        <input type="radio" name="answers[<%= index %>][chosen]" value="3">
+        ③ <%= question["option_3"] %>
+      </label><br>
+      
+      <label>
+        <input type="radio" name="answers[<%= index %>][chosen]" value="4">
+        ④ <%= question["option_4"] %>
+      </label><br>
+    </div>
+  <% end %>
+
+  <button type="submit">回答を送信する</button>
+</form>

@@ -51,6 +51,12 @@
       </a>
       <% end %>
       <% if @is_admin == true || @is_admin == 't' %>
+      <a href='/admin/create-test' class="nav-card accent-card">
+        <div class="icon">📝</div>
+        <h3>英語テスト作成</h3>
+      </a>
+      <% end %>
+      <% if @is_admin == true || @is_admin == 't' %>
       <a href="/users_quiz_result" class="nav-card accent-card">
         <div class="icon">📁</div>
         <h3>全ユーザーの試験結果を確認</h3>

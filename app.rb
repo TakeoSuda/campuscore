@@ -948,25 +948,24 @@ end
 
 get '/quiz_result' do
   user_id = session[:user_id]
+  test_id = session[:test_id] # もしテストIDを渡す場合はここで受け取る
 
   @correct_answers = client.exec_params(
     "SELECT q.id, q.question_text, q.correct_option, al.selected_option, al.answered_at 
      FROM answer_logs al
      JOIN english_questions q ON al.question_id = q.id
-     WHERE al.user_id = $1 AND al.is_correct = true
-     ORDER BY al.answered_at DESC
-     LIMIT 20",
-    [user_id]
+     WHERE al.user_id = $1 AND al.is_correct = true AND al.test_id = $2
+     ORDER BY al.answered_at DESC",
+    [user_id, test_id]
   ).to_a
 
   @wrong_answers = client.exec_params(
     "SELECT q.id, q.question_text, q.correct_option, al.selected_option, al.answered_at 
      FROM answer_logs al
      JOIN english_questions q ON al.question_id = q.id
-     WHERE al.user_id = $1 AND al.is_correct = false
-     ORDER BY al.answered_at DESC
-     LIMIT 20",
-    [user_id]
+     WHERE al.user_id = $1 AND al.is_correct = false AND al.test_id = $2
+     ORDER BY al.answered_at DESC",
+    [user_id, test_id]
   ).to_a
   
   @total_count = @correct_answers.length + @wrong_answers.length
@@ -1010,6 +1009,86 @@ get '/users_quiz_result' do
   erb :users_quiz_result
 end
 
+# クイズ作成用コンソール
+# 💡 1. 問題選択コンソールを表示する画面
+get '/admin/create-test' do
+  # 全ての問題をデータベースから取得
+  @questions = client.exec_params(
+    "SELECT id, category, question_text FROM english_questions ORDER BY category, id ASC"
+  ).to_a
 
+  erb :admin_create_test
+end
 
+# 💡 2. 選択された問題を受け取って処理する
+post '/admin/save-test' do
+  # 画面のチェックボックスで選ばれた問題のID配列を受け取る（例: ["4", "12", "15"])
+  selected_ids = params[:question_ids]
 
+  if selected_ids.nil? || selected_ids.empty?
+    @error = "問題が選択されていません。最低1問以上選択してください。"
+    @questions = client.exec_params("SELECT id, category, question_text FROM english_questions ORDER BY category, id ASC").to_a
+    return erb :admin_create_test
+  end
+
+  test_name = params[:test_name]
+  test_id = client.exec_params("INSERT INTO tests (name) VALUES ($1) RETURNING id", [test_name])[0]["id"]
+  selected_ids.each do |q_id|
+  client.exec_params("INSERT INTO test_questions (test_id, question_id) VALUES ($1, $2)", [test_id, q_id])
+  end
+  "テストを保存しました！"
+
+  redirect '/admin/create-test'
+end
+
+# admin_create_testで作成したテストの問題を受け取って表示する画面
+get '/english_test/:id' do
+  test_id = params[:id]
+
+  @test = client.exec_params("SELECT * FROM tests WHERE id=$1", [test_id]).first
+  halt 404 unless @test
+
+  @questions = client.exec_params(
+    "SELECT q.* FROM english_questions q
+     JOIN test_questions tq ON q.id = tq.question_id
+     WHERE tq.test_id = $1",
+     [test_id]
+  ).to_a
+
+  erb :english_test
+end
+
+# admin_create_testで作成したテストの回答を送信する処理
+post '/english_test/:id/submit' do
+  test_id = params[:id]
+  user_id = session[:user_id]
+  user_answers = params["answers"]
+  @correct_count = 0
+
+  if user_answers
+    user_answers.each do |_index, data|
+      question_id = data["id"].to_i
+      chosen_option = data["chosen"].to_i
+
+      question = client.exec_params(
+        "SELECT correct_option FROM english_questions WHERE id = $1", 
+        [question_id]
+      ).first
+
+      is_correct = false
+      if question && question["correct_option"].to_i == chosen_option
+        is_correct = true
+        @correct_count += 1
+      end
+
+      client.exec_params(
+        "INSERT INTO answer_logs (user_id, question_id, selected_option, is_correct, answered_at, test_id) 
+         VALUES ($1, $2, $3, $4, NOW(), $5)",
+        [user_id, question_id, chosen_option, is_correct, test_id]
+      )
+    end
+  end
+
+  session[:test_id] = test_id # 結果画面でどのテストの結果かを識別するためにセッションに保存
+  redirect '/quiz_result'
+end
