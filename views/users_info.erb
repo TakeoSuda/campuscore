@@ -1,10 +1,10 @@
 <h1>全ユーザー情報</h1>
 <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
 <% x = 1 %>
-<% @users.each do |user| %>
+<% @users_list.each do |u, grade| %>
     <p>
     <%= x %>:
-    <a href="/users_info/<%= user['id'] %>"><%= user['name'] %></a></p>
+    <a href="/users_info/<%= u['id'] %>">学年【<%= u['grade'] %>】 <%= u['name'] %>(<%= u['name_kana'] %>) user ID: <%= u['id'] %></a></p>
     <% x += 1 %>
 <% end %>
 </div>

@@ -202,6 +202,10 @@ get '/users_info' do
   halt 404 unless user
   redirect '/' unless user["is_admin"].to_s == 't'
 
+  #学年ごとに生徒の名前を50音順で表示するためのSQLクエリを作成
+  @users_list = client.exec_params("SELECT id, name, name_kana, grade FROM users ORDER BY grade ASC, name_kana ASC").to_a
+
+
   # SQL実行
   raw_data = client.exec_params("
     SELECT 
