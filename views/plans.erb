@@ -1,6 +1,6 @@
-<h1>合格計画一覧</h1>
+<h1>勉強計画一覧</h1>
 <div>
-<a href="/plan_new">合格計画を追加する</a>
+<a href="/plan_new">勉強計画を追加する</a>
 </div>
 <% @plans.each do |plan| %>
   <div>
@@ -19,11 +19,11 @@
       完了
     <% end %>
     </p>
-    <a href="/plans/<%= plan["id"] %>/edit">この合格計画を編集する</a>
+    <a href="/plans/<%= plan["id"] %>/edit">この勉強計画を編集する</a>
   </div>
 <% end %>
 <div>
-<a href="/plan_new">合格計画を追加する</a>
+<a href="/plan_new">勉強計画を追加する</a>
 </div>
 
 
