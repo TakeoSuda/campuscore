@@ -1,9 +1,9 @@
 <form action="/plans/<%= @plan["id"] %>/edit" method="post">
-    <input type="text" name="subject" placeholder="教科" value="<%= @plan["subject"] %>">
+    <span>教科：</span><input type="text" name="subject" placeholder="教科" value="<%= @plan["subject"] %>">
     </div>
 
     <div>
-    <input type="text" name="material" placeholder="教材" value="<%= @plan["material"] %>">
+    <span>教材：</span><input type="text" name="material" placeholder="教材" value="<%= @plan["material"] %>">
     </div>
 
     <div>
@@ -27,7 +27,7 @@
     </div>
 
      <div>
-        <label>進み具合</label><br>
+        <label>進み具合：</label><br>
         <input type="radio" name="status" value="in_progress" <%= "checked" if @plan["status"] == "in_progress" %>> 進行中
         <input type="radio" name="status" value="not_started" <%= "checked" if @plan["status"] == "not_started" %>> 未開始
         <input type="radio" name="status" value="completed" <%= "checked" if @plan["status"] == "completed" %>> 完了
