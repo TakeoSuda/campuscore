@@ -97,6 +97,7 @@
       <table class="info-table">
         <tr><th>第一志望校</th><td><%= @user["desired_school"] %> (<%= @user["faculty"] %>学部 <%= @user["department"] %>学科)</td></tr>
         <tr><th>第二志望校</th><td><%= @user["second_desired_school"] %> (<%= @user["second_desired_faculty"] %>学部 <%= @user["second_desired_department"] %>学科)</td></tr>
+        <tr><th>第三志望校</th><td><%= @user["third_desired_school"] %> (<%= @user["third_desired_faculty"] %>学部 <%= @user["third_desired_department"] %>学科)</td></tr>
         <tr><th>共通テスト目標</th><td>Reading: <%= @user["target_ct_reading"] %>点 / Listening: <%= @user["target_ct_listening"] %>点</td></tr>
         <tr><th>前回の共テ得点</th><td>Reading: <%= @user["last_ct_reading"] %>点 / Listening: <%= @user["last_ct_listening"] %>点</td></tr>
         <tr><th>英検（取得/目標）</th><td>取得済み: <%= @user["eiken_level"] %> / 目標: <%= @user["desired_eiken_level"] %></td></tr>

@@ -381,6 +381,10 @@ end
   @second_desired_school = params[:second_desired_school]
   @second_desired_faculty = params[:second_desired_faculty]
   @second_desired_department = params[:second_desired_department]
+  @third_desired_school = params[:third_desired_school]
+  @third_desired_faculty = params[:third_desired_faculty]
+  @third_desired_department = params[:third_desired_department]
+
   @target_ct_reading = params[:target_ct_reading].empty? ? nil : params[:target_ct_reading].to_i
   
   @target_ct_listening = params[:target_ct_listening].empty? ? nil : params[:target_ct_listening].to_i
@@ -410,8 +414,8 @@ end
   @recommend_exam = recommend_exam_param == "true"
 
   client.exec_params(
-    "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, school=$5, grade=$6, desired_school=$7, faculty=$8, department=$9, second_desired_school=$10, second_desired_faculty=$11, second_desired_department=$12, target_ct_reading=$13, target_ct_listening=$14, last_ct_reading=$15, last_ct_listening=$16, eiken_level=$17, desired_eiken_level=$18, strong_subject=$19, weak_subject=$20, hobby=$21, club=$22, desired_job=$23, dream=$24, resolution=$25, consult=$26, worry=$27, recommend_exam=$28, request_for_class=$29 WHERE id=$30",
-    [@name_kana, @name, @email, @password, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, @request_for_class, user_id]
+    "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, school=$5, grade=$6, desired_school=$7, faculty=$8, department=$9, second_desired_school=$10, second_desired_faculty=$11, second_desired_department=$12, third_desired_school=$13, third_desired_faculty=$14, third_desired_department=$15, target_ct_reading=$16, target_ct_listening=$17, last_ct_reading=$18, last_ct_listening=$19, eiken_level=$20, desired_eiken_level=$21, strong_subject=$22, weak_subject=$23, hobby=$24, club=$25, desired_job=$26, dream=$27, resolution=$28, consult=$29, worry=$30, recommend_exam=$31, request_for_class=$32 WHERE id=$33",
+    [@name_kana, @name, @email, @password, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @third_desired_school, @third_desired_faculty, @third_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, @request_for_class, user_id]
   )
 
   redirect '/mypage'
