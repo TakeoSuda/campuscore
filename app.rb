@@ -5,7 +5,7 @@ require 'pony'
 require 'securerandom'
 require 'sinatra/cookies'
 require 'json' # JSONを扱うために必要
-require 'rack/cors' # 読み込みを忘れずに
+require 'rack/cors' # 読み込みを忘れない
 
 # --- 修正後のセキュリティ設定 ---
 
@@ -79,7 +79,7 @@ post '/api/quiz_results' do
     user_id = payload['user_id']
     results = payload['results'] # クイズ結果の配列
 
-  puts "resultsの中身: #{results.inspect}" # ここが [] だと保存されません
+  puts "resultsの中身: #{results.inspect}" # ここが [] だと保存されない
 
     # 3. データベースに接続
     # Render環境なら ENV['DATABASE_URL'] を使い、ローカルなら自分のDB名を入れる
@@ -113,10 +113,10 @@ post '/api/quiz_results' do
   end
 end
 
-# --- ここから下に get '/' do ... などのルーティングを続けてください ---
+# --- ここから下に get '/' do ... などのルーティングを続ける ---
 
 get '/' do
-  # views/index.erb を探しに行きます
+  # views/index.erb を探しに行く
   erb :index
 end
 
@@ -232,7 +232,7 @@ get '/users_info' do
       users_hash[uid] = row.merge({ 'plans' => [], 'diaries' => [], 'consults' => [], 'instructions' => []})
     end
 
-    # 重複を避けつつデータを追加（IDなどで判定するのが理想ですが、簡易的に内容で判定）
+    # 重複を避けつつデータを追加（IDなどで判定するのが理想だが、簡易的に内容で判定）
     users_hash[uid]['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'], 'start_date' => row['p_start_date'], 'end_date' => row['p_end_date'] } if row['p_subject']
     users_hash[uid]['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     users_hash[uid]['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
@@ -322,7 +322,7 @@ get '/mypage' do
 
   @user = result[0]
 
-# ここで @is_admin に真偽値を振っておくと、erbで使いやすくなります
+# ここで @is_admin に真偽値を振っておくと、erbで使いやすくなる
   @is_admin = (@user['is_admin'] == 't' || @user['is_admin'] == true)
 
   erb :mypage
@@ -747,7 +747,7 @@ post '/password_reset/update' do
     return erb :password_reset_edit
   end
 
-  # 2. パスワードのバリデーション（以前作った正規表現を使うのがベスト！）
+  # 2. パスワードのバリデーション（以前作った正規表現を使うのが良い）
   # ...（ここに正規表現のチェックを入れる）...
   unless password =~ /\A(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*-])[A-Za-z\d!@#$%^&*-]{8,}\z/
     @error = "パスワードは8文字以上で、英字と数字、記号を含めてください"
@@ -796,7 +796,7 @@ get '/instructions' do
       instructions_hash[i_id] = row.merge({ 'replies' => [] })
     end
 
-    # 重複を避けつつデータを追加（IDなどで判定するのが理想ですが、簡易的に内容で判定）
+    # 重複を避けつつデータを追加（IDなどで判定するのが理想だが、簡易的に内容で判定）
     instructions_hash[i_id]['replies'] << { 'content' => row['ir_content'], 'created_at' => row['ir_created_at'] } if row['ir_content']
   end
 
@@ -924,12 +924,11 @@ post '/quiz/submit' do
   @correct_count = 0  # 正解数を数えるカウンター
 
   if user_answers
-    # ループは1回だけでOK！
     user_answers.each do |_index, data|
       question_id = data["id"].to_i
       chosen_option = data["chosen"].to_i
 
-      # 1. データベースから、その問題の「本当の正解」を取得する
+      # 1. データベースから、その問題の正解を取得する
       question = client.exec_params(
         "SELECT correct_option FROM english_questions WHERE id = $1", 
         [question_id]
@@ -942,7 +941,7 @@ post '/quiz/submit' do
         @correct_count += 1  # 正解だったらカウントを増やす
       end
 
-      # 3. 「誰が」「どの問題に」「何と答え」「正解したか」を1回でインサートする！
+      # 3. 「誰が」「どの問題に」「何と答え」「正解したか」を1回でインサートする
       client.exec_params(
         "INSERT INTO answer_logs (user_id, question_id, selected_option, is_correct, answered_at) 
          VALUES ($1, $2, $3, $4, NOW())",
@@ -990,7 +989,6 @@ get '/users_quiz_result' do
   halt 404 unless user
   redirect '/' unless user["is_admin"].to_s == 't'
 
-  # 💡 q.category を追加しました
   @results = client.exec_params(
     "SELECT u.name AS user_name, q.category, q.question_text, al.selected_option, al.is_correct, al.answered_at 
      FROM answer_logs al
@@ -1006,7 +1004,7 @@ get '/users_quiz_result' do
   @results.each do |row|
     user = row["user_name"]
     category = row["category"]
-    is_correct = row["is_correct"] == "t" # PostgreSQLのboolean型は文字列の"t"か"f"で届くことが多いです
+    is_correct = row["is_correct"] == "t" # PostgreSQLのboolean型は文字列の"t"か"f"で届くことが多い
 
     # 全体数を+1
     @user_stats[user][category][:total] += 1
