@@ -1,11 +1,14 @@
 <h1>全ユーザー情報</h1>
 <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
 <% x = 1 %>
-<% @users_list.each do |u, grade| %>
-    <p>
-    <%= x %>:
-    <a href="/users_info/<%= u['id'] %>">学年【<%= u['grade'] %>】 <%= u['name'] %>(<%= u['name_kana'] %>) user ID: <%= u['id'] %></a></p>
-    <% x += 1 %>
+<% @users_by_campus.each do |campus, users| %>
+    <h2><%= campus %></h2>
+    <% users.each do |u| %>
+        <p>
+        <%= x %>:
+        <a href="/users_info/<%= u['id'] %>">学年【<%= u['grade'] %>】 <%= u['name'] %>(<%= u['name_kana'] %>) user ID: <%= u['id'] %></a></p>
+        <% x += 1 %>
+    <% end %>
 <% end %>
 </div>
 
@@ -16,6 +19,7 @@
         <p>カナ: <%= user['name_kana'] %></p>
         <p>ID: <%= user['id'] %></p>
         <p>メールアドレス: <%= user['email'] %></p>
+        <p>所属校舎: <%= user['campus'] %></p>
         <p>学校: <%= user['school'] %></p>
         <p>学年: <%= user['grade'] %></p>
         <p>第１志望校: <%= user['desired_school'] %></p>

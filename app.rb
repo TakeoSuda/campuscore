@@ -203,8 +203,8 @@ get '/users_info' do
   redirect '/' unless user["is_admin"].to_s == 't'
 
   #学年ごとに生徒の名前を50音順で表示するためのSQLクエリを作成
-  @users_list = client.exec_params("SELECT id, name, name_kana, grade FROM users ORDER BY grade ASC, name_kana ASC").to_a
-
+  users_list = client.exec_params("SELECT id, name, name_kana, grade, campus FROM users ORDER BY grade ASC, name_kana ASC").to_a
+  @users_by_campus = users_list.group_by { |user| user['campus'] }
 
   # SQL実行
   raw_data = client.exec_params("
@@ -372,7 +372,7 @@ else
   @password = current_user["password"]
 end
 
-
+  @campus = params[:campus]
   @school = params[:school]
   @grade = params[:grade]
   @desired_school = params[:desired_school]
@@ -414,8 +414,8 @@ end
   @recommend_exam = recommend_exam_param == "true"
 
   client.exec_params(
-    "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, school=$5, grade=$6, desired_school=$7, faculty=$8, department=$9, second_desired_school=$10, second_desired_faculty=$11, second_desired_department=$12, third_desired_school=$13, third_desired_faculty=$14, third_desired_department=$15, target_ct_reading=$16, target_ct_listening=$17, last_ct_reading=$18, last_ct_listening=$19, eiken_level=$20, desired_eiken_level=$21, strong_subject=$22, weak_subject=$23, hobby=$24, club=$25, desired_job=$26, dream=$27, resolution=$28, consult=$29, worry=$30, recommend_exam=$31, request_for_class=$32 WHERE id=$33",
-    [@name_kana, @name, @email, @password, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @third_desired_school, @third_desired_faculty, @third_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, @request_for_class, user_id]
+    "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, campus=$5, school=$6, grade=$7, desired_school=$8, faculty=$9, department=$10, second_desired_school=$11, second_desired_faculty=$12, second_desired_department=$13, third_desired_school=$14, third_desired_faculty=$15, third_desired_department=$16, target_ct_reading=$17, target_ct_listening=$18, last_ct_reading=$19, last_ct_listening=$20, eiken_level=$21, desired_eiken_level=$22, strong_subject=$23, weak_subject=$24, hobby=$25, club=$26, desired_job=$27, dream=$28, resolution=$29, consult=$30, worry=$31, recommend_exam=$32, request_for_class=$33 WHERE id=$34",
+    [@name_kana, @name, @email, @password, @campus, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @third_desired_school, @third_desired_faculty, @third_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, @request_for_class, user_id]
   )
 
   redirect '/mypage'
