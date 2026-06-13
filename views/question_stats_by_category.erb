@@ -1,0 +1,37 @@
+<h1>各問題ごとの正答率</h1>
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th>単元（カテゴリー）</th>
+            <th>問題ID</th>
+            <th>問題文</th>
+            <th>選択肢①</th>
+            <th>選択肢②</th>
+            <th>選択肢③</th>
+            <th>選択肢④</th>
+            <th>正解の選択肢</th>
+            <th>回答数</th>
+            <th>正解数</th>
+            <th>正答率</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% @question_stats.each do |stat| %>
+        <tr>
+            <td><%= stat["category"] %></td>
+            <td><%= stat["id"] %></td>
+            <td><%= stat["question_text"] %></td>
+            <td><%= stat["option_1"] %></td>
+            <td><%= stat["option_2"] %></td>
+            <td><%= stat["option_3"] %></td>
+            <td><%= stat["option_4"] %></td>
+            <td><%= stat["correct_option"] %></td>
+            <td><%= stat["total_answers"] %> 回</td>
+            <td><%= stat["correct_answers"] %> 回</td>
+            <td style="color: <%= stat["accuracy_rate"].to_f >= 80 ? 'green' : 'red' %>;">
+                <%= stat["accuracy_rate"] %> %
+            </td>
+        </tr>
+        <% end %>
+    </tbody>
+</table>

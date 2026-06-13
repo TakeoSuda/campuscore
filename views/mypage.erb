@@ -65,7 +65,14 @@
       <% if @is_admin == true || @is_admin == 't' %>
       <a href="/question_stats" class="nav-card accent-card">
         <div class="icon">📊</div>
-        <h3>各問題ごとの正答率</h3>
+        <h3>問題ごとの正答率</h3>
+      </a>
+      <% end %>
+
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/question_stats_by_category" class="nav-card accent-card">
+        <div class="icon">📉</div>
+        <h3>単元ごとの正答率</h3>
       </a>
       <% end %>
 
