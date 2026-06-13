@@ -11,9 +11,9 @@
           end %>
     </h2>
 
-    <div class="cards">
+    <div class="cards_recommended_items">
       <% recs.each do |rec| %>
-        <div class="card">
+        <div class="card_recommended_item">
           <h3 class="title"><%= rec["title"] %></h3>
           <p class="level">レベル: <%= rec["level"] %> <%= case rec["level"].to_i
   when 1 then '☆'
