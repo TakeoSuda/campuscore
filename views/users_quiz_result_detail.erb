@@ -1,0 +1,35 @@
+<h1><%= @user_name %>さんのテスト結果詳細</h1>
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+        <th>単元（カテゴリー）</th>
+        <th>問題文</th>
+        <th>選択肢①</th>
+        <th>選択肢②</th>
+        <th>選択肢③</th>
+        <th>選択肢④</th>
+        <th>正解の選択肢</th>
+        <th>選択した選択肢</th>
+        <th>正誤</th>
+        <th>回答日時</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% @results.each do |result| %>
+        <tr>
+            <td><%= result["category"] %></td>
+            <td><%= result["question_text"] %></td>
+            <td><%= result["option_1"] %></td>
+            <td><%= result["option_2"] %></td>
+            <td><%= result["option_3"] %></td>
+            <td><%= result["option_4"] %></td>
+            <td><%= result["correct_option"] %></td>
+            <td><%= result["selected_option"] %></td>
+            <td style="color: <%= result["is_correct"] == "t" ? 'green' : 'red' %>;">
+                <%= result["is_correct"] == "t" ? '正解' : '不正解' %>
+            </td>
+            <td><%= Time.parse(result["answered_at"]).strftime("%Y-%m-%d %H:%M:%S") %></td>
+        </tr>
+        <% end %>
+    </tbody>
+</table>

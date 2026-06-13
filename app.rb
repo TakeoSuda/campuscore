@@ -990,7 +990,7 @@ get '/users_quiz_result' do
   redirect '/' unless user["is_admin"].to_s == 't'
 
   @results = client.exec_params(
-    "SELECT u.name AS user_name, q.category, q.question_text, al.selected_option, al.is_correct, al.answered_at 
+    "SELECT u.name AS user_name, u.id AS user_id, q.category, q.question_text, al.selected_option, al.is_correct, al.answered_at 
      FROM answer_logs al
      JOIN english_questions q ON al.question_id = q.id
      JOIN users u ON al.user_id = u.id
@@ -1003,6 +1003,7 @@ get '/users_quiz_result' do
 
   @results.each do |row|
     user = row["user_name"]
+    user_id = row["user_id"]
     category = row["category"]
     is_correct = row["is_correct"] == "t" # PostgreSQLのboolean型は文字列の"t"か"f"で届くことが多い
 
@@ -1013,6 +1014,33 @@ get '/users_quiz_result' do
   end
 
   erb :users_quiz_result
+end
+
+#ユーザーごとのオンラインテストの成績表示
+get '/users_quiz_result/:user_name' do
+  @user_name = params[:user_name]
+
+  # 管理者かどうかのチェック
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless current_user
+  redirect '/' unless current_user["is_admin"].to_s == 't'
+
+  @results = client.exec_params(
+    "SELECT q.category, q.question_text, q.option_1, q.option_2, q.option_3, q.option_4, q.correct_option, al.selected_option, al.is_correct, al.answered_at 
+     FROM answer_logs al
+     JOIN english_questions q ON al.question_id = q.id
+     JOIN users u ON al.user_id = u.id
+     WHERE u.name = $1
+     ORDER BY al.answered_at DESC",
+    [@user_name]
+  ).to_a
+
+  @correct_answers = @results.select { |r| r["is_correct"] == "t" }
+  @wrong_answers = @results.select { |r| r["is_correct"] == "f" }
+  @total_count = @results.length
+  @accuracy_rate = @total_count > 0 ? (@correct_answers.length.to_f / @total_count * 100).round(2) : 0
+
+  erb :users_quiz_result_detail
 end
 
 # クイズ作成用コンソール

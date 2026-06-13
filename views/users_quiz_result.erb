@@ -2,7 +2,7 @@
 
 <% @user_stats.each do |user_name, categories| %>
   <div class="user-report-card" style="border: 1px solid #ccc; border-radius: 15px; padding: 15px; margin-bottom: 20px;">
-    <h2>👤 ユーザー名: <%= user_name %> さんの成績</h2>
+    <h2>👤 ユーザー名: <a href="/users_quiz_result/<%= user_name %>"><%= user_name %></a> さんの成績</h2>
     
     <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">
       <thead>
