@@ -62,6 +62,12 @@
         <h3>全ユーザーの試験結果を確認</h3>
       </a>
       <% end %>
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/question_stats" class="nav-card accent-card">
+        <div class="icon">📊</div>
+        <h3>各問題ごとの正答率</h3>
+      </a>
+      <% end %>
 
     <%# <a href="/chat_rooms" class="nav-card">
       <div class="icon">💬</div>

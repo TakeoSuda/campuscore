@@ -1126,3 +1126,41 @@ post '/english_test/:id/submit' do
   session[:test_id] = test_id # 結果画面でどのテストの結果かを識別するためにセッションに保存
   redirect '/quiz_result'
 end
+
+
+# 問題ごとの正答率を表示する画面（正答率の降順）
+get '/question_stats' do
+  # 管理者かどうかのチェック
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless current_user
+  redirect '/' unless current_user["is_admin"].to_s == 't'
+
+  # 【修正】SQL側で正答率（accuracy_rate）を計算し、降順（DESC）で並び替える
+  @question_stats = client.exec_params("
+    SELECT 
+      q.id, 
+      q.category, 
+      q.question_text, 
+      q.option_1, 
+      q.option_2, 
+      q.option_3, 
+      q.option_4,
+      COUNT(al.id) AS total_answers, 
+      SUM(CASE WHEN al.is_correct THEN 1 ELSE 0 END) AS correct_answers,
+      
+      -- 💡 ゼロ除算対策：回答数が0なら0、それ以外なら正答率(%)を計算
+      CASE 
+        WHEN COUNT(al.id) = 0 THEN 0
+        ELSE ROUND((SUM(CASE WHEN al.is_correct THEN 1 ELSE 0 END)::numeric / COUNT(al.id)) * 100, 1)
+      END AS accuracy_rate
+
+    FROM english_questions q
+    LEFT JOIN answer_logs al ON q.id = al.question_id
+    GROUP BY q.id
+    
+    -- 💡 正答率の降順（大きい順）、同じ正答率ならカテゴリ・ID順
+    ORDER BY accuracy_rate DESC, q.category ASC, q.id ASC
+  ").to_a
+
+  erb :question_stats
+end
