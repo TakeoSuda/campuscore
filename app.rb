@@ -1145,6 +1145,7 @@ get '/question_stats' do
       q.option_2, 
       q.option_3, 
       q.option_4,
+      q.correct_option,
       COUNT(al.id) AS total_answers, 
       SUM(CASE WHEN al.is_correct THEN 1 ELSE 0 END) AS correct_answers,
       
