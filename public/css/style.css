@@ -375,7 +375,6 @@ span.badge {
   border-radius: 12px;
   padding: 20px;
   margin: 30px auto;
-  width: 90%;
   max-width: 800px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
@@ -405,6 +404,15 @@ span.badge {
     width: calc((100% - 15px) / 2);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     transition: 0.2s;
+}
+
+/* スマホで見たときに崩れないようにするレスポンシブ対応 */
+@media (max-width: 768px) {
+  .card_recommended_item {
+    /* スマホ画面では1行に1枚（1列配置）にする */
+    box-sizing: border-box;
+    width: 100%;
+  }
 }
 
 /* ホバーで浮く */
