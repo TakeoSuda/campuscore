@@ -1173,6 +1173,8 @@ get '/question_stats_by_category' do
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
+  @question_categories = client.exec_params("SELECT DISTINCT category FROM english_questions ORDER BY category ASC").to_a
+
   # 【修正】SQL側で正答率（accuracy_rate）を計算し、降順（DESC）で並び替える
   @question_stats = client.exec_params("
     SELECT 

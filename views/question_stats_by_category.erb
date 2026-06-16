@@ -1,37 +1,83 @@
-<h1>各問題ごとの正答率</h1>
-<table border="1" cellpadding="5" cellspacing="0">
+<h1>単元ごとの正答率</h1>
+<table style="border-collapse: collapse; width: 100%;">
     <thead>
         <tr style="background-color: #f2f2f2;">
-            <th>単元（カテゴリー）</th>
-            <th>問題ID</th>
-            <th>問題文</th>
-            <th>選択肢①</th>
-            <th>選択肢②</th>
-            <th>選択肢③</th>
-            <th>選択肢④</th>
-            <th>正解の選択肢</th>
-            <th>回答数</th>
-            <th>正解数</th>
-            <th>正答率</th>
+            <th style="border-right: 1px solid #dbe3ec; padding: 8px;">単元番号</th>
+            <th style="padding: 8px;">単元名</th>
         </tr>
     </thead>
     <tbody>
-        <% @question_stats.each do |stat| %>
-        <tr>
-            <td><%= stat["category"] %></td>
-            <td><%= stat["id"] %></td>
-            <td><%= stat["question_text"] %></td>
-            <td><%= stat["option_1"] %></td>
-            <td><%= stat["option_2"] %></td>
-            <td><%= stat["option_3"] %></td>
-            <td><%= stat["option_4"] %></td>
-            <td><%= stat["correct_option"] %></td>
-            <td><%= stat["total_answers"] %> 回</td>
-            <td><%= stat["correct_answers"] %> 回</td>
-            <td style="color: <%= stat["accuracy_rate"].to_f >= 80 ? 'green' : 'red' %>;">
-                <%= stat["accuracy_rate"] %> %
-            </td>
-        </tr>
-        <% end %>
+<% index = 0 %>
+<% @question_categories.each_with_index do |category, index| %>
+  <tr style="border-bottom: 1px solid #efefef;">
+    <td style="border-right: 1px solid #dbe3ec; padding: 8px;"><%= index + 1 %></td>
+    <td style="padding: 8px;"><a href="#<%= category["category"] %>"><%= 
+      case category["category"]
+      when "auxiliary_verb" then "助動詞"
+      when "tense" then "時制"
+      when "passive" then "受動態"
+      when "relative_clause" then "関係詞"
+      when "sentence_pattern" then "品詞・文型"
+      when "word" then "単語"
+      when "grammar" then "文法"
+      when "reading" then "📖 読解"
+      else category["category"]
+      end %></a></td>
+  </tr>
+<% end %>
     </tbody>
 </table>
+<%# 💡 1. データを単元（category）ごとにグループ化する %>
+<% @question_stats.group_by { |stat| stat["category"] }.each do |category, stats| %>
+  
+  <%# 💡 2. 単元ごとの見出しを表示（データベースの値に応じて日本語に変換） %>
+  <h2 id="<%= category %>" class="category-heading" style="margin-top: 30px; border-left: 5px solid #3498db; padding-left: 10px;">
+    <%= case category
+        when "auxiliary_verb" then "助動詞"
+        when "tense" then "時制"
+        when "passive" then "受動態"
+        when "relative_clause" then "関係詞"
+        when "sentence_pattern" then "品詞・文型"
+        when "word" then "単語"
+        when "grammar" then "文法"
+        when "reading" then "📖 読解"
+        else category # 想定外のカテゴリ名の場合はそのまま表示
+        end %>
+  </h2>
+
+  <%# 💡 3. その単元に所属する問題のテーブルを表示 %>
+  <table border="1" cellpadding="5" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+      <thead>
+          <tr style="background-color: #f2f2f2;">
+              <th>問題ID</th>
+              <th>問題文</th>
+              <th>選択肢①</th>
+              <th>選択肢②</th>
+              <th>選択肢③</th>
+              <th>選択肢④</th>
+              <th>正解</th>
+              <th>回答数</th>
+              <th>正解数</th>
+              <th>正答率</th>
+          </tr>
+      </thead>
+      <tbody>
+          <% stats.each do |stat| %>
+          <tr>
+              <td><%= stat["id"] %></td>
+              <td><%= stat["question_text"] %></td>
+              <td><%= stat["option_1"] %></td>
+              <td><%= stat["option_2"] %></td>
+              <td><%= stat["option_3"] %></td>
+              <td><%= stat["option_4"] %></td>
+              <td style="text-align: center;"><%= stat["correct_option"] %></td>
+              <td><%= stat["total_answers"] %> 回</td>
+              <td><%= stat["correct_answers"] %> 回</td>
+              <td style="color: <%= stat["accuracy_rate"].to_f >= 80 ? 'green' : 'red' %>; font-weight: bold;">
+                  <%= stat["accuracy_rate"] %> %
+              </td>
+          </tr>
+          <% end %>
+      </tbody>
+  </table>
+<% end %>

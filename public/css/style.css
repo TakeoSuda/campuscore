@@ -1,3 +1,12 @@
+/* ページ全体に指定 */
+html {
+  /* ジャンプしたときに、上から 100px 手前でピタッと止まるようにする */
+  scroll-padding-top: 100px; 
+  
+  /* スクロールをスーッと滑らかに動かしたい場合 */
+  scroll-behavior: smooth; 
+}
+
 /* base settings */
 :root {
   --primary-color: #1111d4;
