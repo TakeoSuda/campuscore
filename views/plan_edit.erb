@@ -1,3 +1,5 @@
+<h1>勉強履歴・勉強計画を編集する</h1>
+<p>このページでは、これまでに何を勉強してきたか、今後何を勉強するかを記録できます。必要な情報を入力して「更新」ボタンを押してください。</p>
 <form action="/plans/<%= @plan["id"] %>/edit" method="post">
     <span>教科：</span><input type="text" name="subject" placeholder="教科" value="<%= @plan["subject"] %>">
     </div>
@@ -7,11 +9,11 @@
     </div>
 
     <div>
-    <span>開始予定日：</span><input type="date" name="start_date" placeholder="開始日" value="<%= @plan["start_date"] %>" required>
+    <span>開始（予定）日：</span><input type="date" name="start_date" placeholder="開始日" value="<%= @plan["start_date"] %>" required>
     </div>
 
     <div>
-    <span>終了予定日：</span><input type="date" name="end_date" placeholder="終了日" value="<%= @plan["end_date"] %>" required>
+    <span>終了（予定）日：</span><input type="date" name="end_date" placeholder="終了日" value="<%= @plan["end_date"] %>" required>
     </div>
 
     <div>
