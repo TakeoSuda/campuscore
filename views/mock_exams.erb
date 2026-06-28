@@ -1,6 +1,6 @@
-<h1>模試結果</h1>
+<h1>模試・入試結果</h1>
 
-<h2>模試結果を入力する</h2>
+<h2>模試・入試結果を入力する</h2>
 <form action="/mock_exams/new" method="post">
     <div>
         <label for="taken_at">受験日:</label>
@@ -123,7 +123,7 @@
 <br>
 
 <div>
-    <h2>過去の模試結果</h2>
+    <h2>過去の模試・入試結果</h2>
 <% @mock_exams.each do |exam| %>
   <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
     <p>受験日: <%= exam['taken_at'] %></p>
