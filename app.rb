@@ -1046,6 +1046,10 @@ end
 # クイズ作成用コンソール
 # 💡 1. 問題選択コンソールを表示する画面
 get '/admin/create-test' do
+  # セッションからメッセージを取り出して、表示したら消す（一度きりの表示にするため）
+  @success_message = session[:success]
+  session[:success] = nil
+
   # 全ての問題をデータベースから取得
   @questions = client.exec_params(
     "SELECT id, category, question_text FROM english_questions ORDER BY category, id ASC"
@@ -1070,7 +1074,9 @@ post '/admin/save-test' do
   selected_ids.each do |q_id|
   client.exec_params("INSERT INTO test_questions (test_id, question_id) VALUES ($1, $2)", [test_id, q_id])
   end
-  "テストを保存しました！"
+
+  # ✅ ここで、セッションにメッセージを代入する
+  session[:success] = "テスト「#{test_name}」を保存しました！"
 
   redirect '/admin/create-test'
 end
