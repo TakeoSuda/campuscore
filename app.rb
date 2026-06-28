@@ -206,50 +206,6 @@ get '/users_info' do
   users_list = client.exec_params("SELECT id, name, name_kana, grade, campus FROM users ORDER BY grade ASC, name_kana ASC").to_a
   @users_by_campus = users_list.group_by { |user| user['campus'] }
 
-  # SQL実行
-  raw_data = client.exec_params("
-    SELECT 
-      users.*, 
-      plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status, plans.start_date AS p_start_date, plans.end_date AS p_end_date,
-      diary_entries.content AS d_content, diary_entries.date AS d_date,
-      consults.content AS c_content, consults.date AS c_date,
-      instructions.content AS i_content, instructions.created_at AS i_created_at,
-      instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at, instruction_replies.user_id AS ir_user_id
-    FROM users 
-    LEFT JOIN plans ON users.id = plans.user_id 
-    LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
-    LEFT JOIN consults ON users.id = consults.user_id
-    LEFT JOIN instructions ON users.id = instructions.user_id OR instructions.user_id IS NULL
-    LEFT JOIN instruction_replies ON instructions.id = instruction_replies.instruction_id
-    ORDER BY users.name_kana ASC
-  ").to_a
-
-  # データをユーザーごとにグルーピングする
-  users_hash = {}
-  raw_data.each do |row|
-    uid = row['id']
-    unless users_hash[uid]
-      users_hash[uid] = row.merge({ 'plans' => [], 'diaries' => [], 'consults' => [], 'instructions' => []})
-    end
-
-    # 重複を避けつつデータを追加（IDなどで判定するのが理想だが、簡易的に内容で判定）
-    users_hash[uid]['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'], 'start_date' => row['p_start_date'], 'end_date' => row['p_end_date'] } if row['p_subject']
-    users_hash[uid]['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
-    users_hash[uid]['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
-    users_hash[uid]['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
-  end
-
-  @users = users_hash.values.map do |u|
-    u['plans'].uniq!; u['diaries'].uniq!; u['consults'].uniq!; u['instructions'].uniq!
-    # 日記を日付順（新しい順）に並び替える【追加】
-    u['diaries'].sort_by! { |d| d['date'] }.reverse! if u['diaries']
-    # 相談を日付順（新しい順）に並び替える【追加】
-    u['consults'].sort_by! { |c| c['date'] }.reverse! if u['consults']
-    # 指示を日付順（新しい順）に並び替える【追加】
-    u['instructions'].sort_by! { |i| i['created_at'] }.reverse! if u['instructions']
-    u
-  end
-
   erb :users_info
 end
 
