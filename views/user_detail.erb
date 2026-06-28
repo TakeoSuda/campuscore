@@ -37,7 +37,7 @@
         <p>作成日時: <%= @user['created_at'] %></p>
         <p>更新日時: <%= @user['updated_at'] %></p>
         <div style="border: 1px solid #ccc; padding: 10px; margin-top: 20px;">
-            <h1>学習計画</h1>
+            <h1>勉強履歴・勉強計画</h1>
             <% @user['plans'].each do |plan| %>
                 <p>教科: <%= plan['subject'] %></p>
                 <p>教材: <%= plan['material'] %></p>
