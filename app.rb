@@ -862,8 +862,8 @@ get '/mock_exams' do
     "SELECT * FROM mock_exams WHERE user_id = $1 ORDER BY taken_at DESC",
     [user_id]
   ).to_a
-
-
+  @success_message = session[:flash]
+  session[:flash] = nil
 
   erb :mock_exams
 end
@@ -902,6 +902,55 @@ post '/mock_exams/new' do
   redirect '/mock_exams'
 end
 
+# 模試結果を削除する
+post "/mock_exams/:id/delete" do
+  exam_id = params[:id]
+  client.exec_params("DELETE FROM mock_exams WHERE id = $1", [exam_id])
+  redirect '/mock_exams'
+end
+
+# 模試結果を編集する
+get '/mock_exams/:id/edit' do
+  exam_id = params[:id]
+  @mock_exam = client.exec_params("SELECT * FROM mock_exams WHERE id = $1", [exam_id]).first
+  erb :mock_exams_edit
+end
+
+post '/mock_exams/:id/edit' do
+  exam_id = params[:id]
+  user_id = session[:user_id]
+  english_r = params[:english_r].to_i
+  english_l = params[:english_l].to_i
+  math_1a = params[:math_1a].to_i
+  math_2bc = params[:math_2bc].to_i
+  japanese = params[:japanese].to_i
+  physics_basic = params[:physics_basic].to_i
+  chemistry_basic = params[:chemistry_basic].to_i
+  biology_basic = params[:biology_basic].to_i
+  earth_science_basic = params[:earth_science_basic].to_i
+  physics = params[:physics].to_i
+  chemistry = params[:chemistry].to_i
+  biology = params[:biology].to_i
+  earth_science = params[:earth_science].to_i
+  world_history = params[:world_history].to_i
+  japanese_history = params[:japanese_history].to_i
+  geography = params[:geography].to_i
+  civics_ethics = params[:civics_ethics].to_i
+  civics_politics = params[:civics_politics].to_i
+  geography_basic = params[:geography_basic].to_i
+  history_basic = params[:history_basic].to_i
+  civics_basic = params[:civics_basic].to_i
+  informatics = params[:informatics].to_i
+  taken_at = params[:taken_at]
+
+  client.exec_params(
+    "UPDATE mock_exams SET english_r=$1, english_l=$2, math_1a=$3, math_2bc=$4, japanese=$5, physics_basic=$6, chemistry_basic=$7, biology_basic=$8, earth_science_basic=$9, physics=$10, chemistry=$11, biology=$12, earth_science=$13, world_history=$14, japanese_history=$15, geography=$16, civics_ethics=$17, civics_politics=$18, geography_basic=$19, history_basic=$20, civics_basic=$21, informatics=$22, taken_at=$23 WHERE id=$24 AND user_id=$25",
+    [english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at, exam_id, user_id]
+  )
+  session[:flash] = "模試・入試結果を更新しました。"
+
+  redirect '/mock_exams'
+end
 
 # オンライン試験関係
 get '/quiz_select' do

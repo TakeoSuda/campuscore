@@ -1,3 +1,7 @@
+<% if @success_message %>
+  <p style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 12px; margin-bottom: 20px; border-radius: 4px;"><%= @success_message %></p>
+<% end %>
+
 <h1>模試・入試結果</h1>
 
 <h2>模試・入試結果を入力する</h2>
@@ -149,7 +153,15 @@
     <p>歴史総合: <%= exam['history_basic'] %><span> 点</span></p>
     <p>公共: <%= exam['civics_basic'] %><span> 点</span></p>
     <p>情報: <%= exam['informatics'] %><span> 点</span></p>
+    <form action="/mock_exams/<%= exam['id'] %>/delete" method="post" onsubmit="return confirm('本当に削除しますか？');" style="display: inline;">
+    <input type="submit" value="この模試・入試結果を削除する">
+    </form>
+    <a href="/mock_exams/<%= exam['id'] %>/edit" style="display: inline;">
+    <input type="submit" value="この模試・入試結果を編集する">
+    </a>
   </div>
+  
+  
 <% end %>
 <div>
   <a href="/mypage">マイページに戻る</a>
