@@ -221,6 +221,11 @@ span.badge {
   gap: 0.5rem;
 }
 
+.accent-card {
+  background-color: #bdddf5;
+  border-color: #3498db;
+}
+
 .nav-card:hover {
   transform: translateY(-5px);
   border-color: var(--primary-color);

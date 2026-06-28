@@ -38,12 +38,10 @@
         <h3>オンライン英語試験を受ける</h3>
       </a>
 
-      <% if @is_admin == true || @is_admin == 't' %>
-      <a href="/instructions/new" class="nav-card accent-card">
-        <div class="icon">➕</div>
-        <h3>学習アドバイスを作る</h3>
+      <a href="/mypage_edit" class="nav-card primary-card">
+        <div class="icon">⚙️</div>
+        <h3>マイプロフィールを編集する</h3>
       </a>
-      <% end %>
       <% if @is_admin == true || @is_admin == 't' %>
       <a href="/users_info" class="nav-card accent-card">
         <div class="icon">🖥️</div>
@@ -51,11 +49,19 @@
       </a>
       <% end %>
       <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/instructions/new" class="nav-card accent-card">
+        <div class="icon">➕</div>
+        <h3>学習アドバイスを作る</h3>
+      </a>
+      <% end %>
+      
+      <% if @is_admin == true || @is_admin == 't' %>
       <a href='/admin/create-test' class="nav-card accent-card">
         <div class="icon">📝</div>
         <h3>英語テスト作成</h3>
       </a>
       <% end %>
+     
       <% if @is_admin == true || @is_admin == 't' %>
       <a href="/users_quiz_result" class="nav-card accent-card">
         <div class="icon">📁</div>
@@ -84,10 +90,7 @@
       <div class="icon">➕</div>
       <h3>質問をする</h3>
     </a> %>
-    <a href="/mypage_edit" class="nav-card primary-card">
-      <div class="icon">⚙️</div>
-      <h3>マイプロフィールを編集する</h3>
-    </a>
+
   </section>
 
   <section class="profile-section">
