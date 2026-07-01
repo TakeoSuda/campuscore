@@ -38,6 +38,11 @@
         <h3>オンライン英語試験を受ける</h3>
       </a>
 
+      <a href="/target_schools" class="nav-card">
+        <div class="icon">🎓</div>
+        <h3>志望校情報を確認する</h3>
+      </a>
+
       <a href="/mypage_edit" class="nav-card primary-card">
         <div class="icon">⚙️</div>
         <h3>マイプロフィールを編集する</h3>
@@ -102,6 +107,12 @@
     <div class="profile-group">
       <h3>基本情報</h3>
       <table class="info-table">
+        <% if @user["avatar"] %>
+          <tr><th>プロフィール画像</th><td><img src="<%= @user['avatar'] %>" alt="プロフィール画像" 
+          class="profile-avatar"
+          style="max-width: 150px; max-height: 150px; border: 1px solid #ccc; border-radius: 15px; box-shadow: 0 0 10px rgba(0,0,0,0.1); object-fit: cover; transition: transform 0.3s ease;"
+          ></td></tr>
+        <% end %>
         <tr><th>名前（ふりがな）</th><td><%= @user["name"] %> (<%= @user["name_kana"] %>)</td></tr>
         <tr><th>メールアドレス</th><td><%= @user["email"] %></td></tr>
         <tr><th>所属校舎</th><td><%= @user["campus"] %></td></tr>
@@ -149,3 +160,29 @@
     </div>
   </section>
 </div>
+
+<style>
+  /* 1. まず、ホバーしたときに実行するアニメーションを登録 */
+  .profile-avatar:hover {
+    /* animation: (名前) (時間) (タイミング) ;
+      'myJump'という名前のアニメーションを0.5秒かけて、一回だけ実行する
+    */
+    animation: myJump 0.5s ease-out;
+  }
+
+  /* 2. 登録したアニメーション「myJump」の具体的な動き（キーフレーム）を定義 */
+  @keyframes myJump {
+    /* アニメーション開始時（0%）は元の位置 */
+    0% {
+      transform: translateY(0);
+    }
+    /* 真ん中（50%）で一番上にポンと到達（-15px移動） */
+    50% {
+      transform: translateY(-15px);
+    }
+    /* 終了時（100%）は、また元の位置に（0）戻ってくる */
+    100% {
+      transform: translateY(0);
+    }
+  }
+</style>

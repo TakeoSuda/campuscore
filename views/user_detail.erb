@@ -1,5 +1,11 @@
 <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
         <h1><%= @user['name'] %>さんの情報</h1>
+        <% if @user['avatar'] %>
+            <img src="<%= @user['avatar'] %>" alt="プロフィール画像" 
+            class="profile-avatar"
+            style="max-width: 150px; max-height: 150px; border: 1px solid #ccc; border-radius: 15px; box-shadow: 0 0 10px rgba(0,0,0,0.1); object-fit: cover; transition: transform 0.3s ease;"
+            >
+        <% end %>
         <p>カナ: <%= @user['name_kana'] %></p>
         <p>ID: <%= @user['id'] %></p>
         <p>メールアドレス: <%= @user['email'] %></p>

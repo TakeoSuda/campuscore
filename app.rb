@@ -6,6 +6,12 @@ require 'securerandom'
 require 'sinatra/cookies'
 require 'json' # JSONを扱うために必要
 require 'rack/cors' # 読み込みを忘れない
+require 'open-uri'
+require 'nokogiri'
+require 'cgi'
+require 'selenium-webdriver'
+require 'fileutils'
+require 'cloudinary'
 
 # --- 修正後のセキュリティ設定 ---
 
@@ -203,7 +209,7 @@ get '/users_info' do
   redirect '/' unless user["is_admin"].to_s == 't'
 
   #学年ごとに生徒の名前を50音順で表示するためのSQLクエリを作成
-  users_list = client.exec_params("SELECT id, name, name_kana, grade, campus FROM users ORDER BY grade ASC, name_kana ASC").to_a
+  users_list = client.exec_params("SELECT id, name, name_kana, grade, campus, avatar FROM users ORDER BY grade ASC, name_kana ASC").to_a
   @users_by_campus = users_list.group_by { |user| user['campus'] }
 
   erb :users_info
@@ -297,6 +303,7 @@ get "/mypage_edit" do
   erb :mypage_edit
 end
 
+
 post '/mypage_edit' do
   user_id = session[:user_id]
   @name_kana = params[:name_kana]
@@ -369,9 +376,30 @@ end
   # Booleanに変換
   @recommend_exam = recommend_exam_param == "true"
 
+  # ユーザーのavatar画像のアップロード処理
+  avatar_file = params[:avatar]
+
+  # --- 1. 画像の保存処理 (Cloudinary対応版) ---
+  if avatar_file
+    tempfile = avatar_file[:tempfile]
+
+    # 💡 ローカルへの保存処理の代わりに、Cloudinaryに直接アップロード
+    # RenderのEnvironmentに登録した鍵を使って自動的に通信してくれる
+    response = Cloudinary::Uploader.upload(tempfile.path)
+    
+    # 💡 データベース（avatarカラム）には、Cloudinary側で生成された「画像のURL」をそのまま保存する
+    # これにより、下のSQL処理（unique_filenameの箇所）を変更せずにそのまま動かせる
+    unique_filename = response['secure_url']
+  else
+    # 新しい画像が送られてこなかった場合は、既存の値を維持する処理、
+    # あるいは現在のコードの仕様通り、変更なし（または既存のURLをそのまま渡す）に調整して
+    # （※もし「画像を変更しない時」にDBの値が消えてしまう場合は、params等から既存の値を引き継ぐ必要がある）
+    unique_filename = nil 
+  end
+
   client.exec_params(
-    "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, campus=$5, school=$6, grade=$7, desired_school=$8, faculty=$9, department=$10, second_desired_school=$11, second_desired_faculty=$12, second_desired_department=$13, third_desired_school=$14, third_desired_faculty=$15, third_desired_department=$16, target_ct_reading=$17, target_ct_listening=$18, last_ct_reading=$19, last_ct_listening=$20, eiken_level=$21, desired_eiken_level=$22, strong_subject=$23, weak_subject=$24, hobby=$25, club=$26, desired_job=$27, dream=$28, resolution=$29, consult=$30, worry=$31, recommend_exam=$32, request_for_class=$33 WHERE id=$34",
-    [@name_kana, @name, @email, @password, @campus, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @third_desired_school, @third_desired_faculty, @third_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, @request_for_class, user_id]
+    "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, campus=$5, school=$6, grade=$7, desired_school=$8, faculty=$9, department=$10, second_desired_school=$11, second_desired_faculty=$12, second_desired_department=$13, third_desired_school=$14, third_desired_faculty=$15, third_desired_department=$16, target_ct_reading=$17, target_ct_listening=$18, last_ct_reading=$19, last_ct_listening=$20, eiken_level=$21, desired_eiken_level=$22, strong_subject=$23, weak_subject=$24, hobby=$25, club=$26, desired_job=$27, dream=$28, resolution=$29, consult=$30, worry=$31, recommend_exam=$32, request_for_class=$33, avatar=$34 WHERE id=$35",
+    [@name_kana, @name, @email, @password, @campus, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @third_desired_school, @third_desired_faculty, @third_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, @request_for_class, unique_filename, user_id]
   )
 
   redirect '/mypage'
@@ -1215,4 +1243,211 @@ get '/question_stats_by_category' do
   ").to_a
 
   erb :question_stats_by_category
+end
+
+# パスナビのサイトからのデータ取得
+class PassNaviScraper
+  def self.fetch_deviation(univ_id, department_name)
+    url = "https://passnavi.obunsha.co.jp/univ/#{univ_id}/difficulty/"
+    
+    begin
+      html = URI.open(url).read
+      doc = Nokogiri::HTML.parse(html)
+      
+      rows = doc.css('.commonTable tr')
+      puts "【デバッグ】見つかった行数: #{rows.size}件"
+
+      found_deviation = nil
+      
+      rows.each do |row|
+        cells = row.css('td')
+
+        # 💡 【重要】列の数が4つ未満（見出し行や空の行）なら、エラーを防ぐために即スキップ
+        next if cells.size < 4
+
+        # 💡 4つ以上あることが確定してからデバッグ出力や処理を行う
+        puts "【デバッグ】有効な行のcellsの中身: #{cells.map(&:text)}"
+        
+        # 4番目の列（偏差値が入る場所）を取得
+        deviation_text = cells[3].text.strip
+        
+        # もし文字に「%」が含まれていたら、それは共通テストの行なので無視して次へ
+        next if deviation_text.include?('%')
+        
+        # もし中身が空（得点率も偏差値も書かれていない行）なら無視して次へ
+        next if deviation_text.empty?
+        
+        # 学科名の判定
+        department_cell_text = cells[0].text
+        if department_cell_text.include?(department_name)
+          found_deviation = deviation_text
+          break # 一般選抜の正しい偏差値が見つかったのでループを抜ける！
+        end
+      end
+      
+      return found_deviation
+    rescue => e
+      puts "スクレイピングエラー: #{e.message}"
+      nil
+    end
+  end
+
+  def self.fetch_border(univ_id, department_name)
+    url = "https://passnavi.obunsha.co.jp/univ/#{univ_id}/difficulty/"
+    
+    begin
+      html = URI.open(url).read
+      doc = Nokogiri::HTML.parse(html)
+      
+      rows = doc.css('.commonTable tr')
+      puts "【デバッグ】見つかった行数: #{rows.size}件"
+
+      found_border = nil
+      
+      rows.each do |row|
+        cells = row.css('td')
+
+        # 💡 【重要】列の数が4つ未満（見出し行や空の行）なら、エラーを防ぐために即スキップ
+        next if cells.size < 4
+
+        # 💡 4つ以上あることが確定してからデバッグ出力や処理を行う
+        puts "【デバッグ】有効な行のcellsの中身: #{cells.map(&:text)}"
+        
+        # 3番目の列（ボーダーが入る場所）を取得
+        border_text = cells[2].text.strip
+        
+        # もし文字に「%」が含まれていたら、それはボーダーの行ではないで無視して次へ
+        next if !border_text.include?('%')
+        
+        # もし中身が空（得点率もボーダーも書かれていない行）なら無視して次へ
+        next if border_text.empty?
+        
+        # 学科名の判定
+        department_cell_text = cells[0].text
+        if department_cell_text.include?(department_name)
+          found_border = border_text
+          break # 一般選抜の正しいボーダーが見つかったのでループを抜ける
+        end
+      end
+      
+      return found_border
+    rescue => e
+      puts "スクレイピングエラー: #{e.message}"
+      nil
+    end
+  end 
+
+  def self.fetch_univ_id(univ_name)
+    # 1. ブラウザの起動設定（ここではChromeを使用）
+    options = Selenium::WebDriver::Chrome::Options.new
+    # 画面を表示させずに裏で実行したい場合は以下を有効にする
+    # options.add_argument('--headless') 
+
+    driver = Selenium::WebDriver.for :chrome, options: options
+
+    begin
+      # 2. Googleのトップページを開く
+      driver.get 'https://www.google.com'
+
+      # 3. 検索窓（input要素）を見つけて、キーワードを入力
+      # Googleの検索窓は name="q" という属性を持っています
+      search_box = driver.find_element(name: 'q')
+      search_box.send_keys('パスナビ ' + univ_name)
+      search_box.submit # フォームを送信（検索実行）
+
+      # 4. 検索結果が表示されるまで少し待つ（最大120秒）
+      wait = Selenium::WebDriver::Wait.new(timeout: 120)
+      wait.until { driver.find_element(id: 'search') }
+
+      # 5. 検索結果のタイトル（h3タグ）をすべて取得して表示
+      titles = driver.find_elements(css: 'h3').first.text
+      return titles
+
+    ensure
+      # 6. 最後に必ずブラウザを閉じる
+      driver.quit
+    end
+  end
+    
+end
+
+get '/target_schools' do
+  @user_id = session[:user_id]
+
+  erb :target_schools
+end
+
+post '/target_schools' do
+  @user_id = session[:user_id]
+  univ_name = params[:univ_name]         # 例: "青学" などからIDを判定する仕組み、または直でID
+  faculty_name = params[:faculty_name]   # 例: "経済学部"
+  department_name = params[:department_name]  # 例: "経済学科"
+  
+  # 本来は大学名からパスナビの「univ_id（4桁の数字など）」を検索・特定する処理が必要
+  univ_id = "2260" # 例として青山学院大学のID（仮）
+  
+  # スクレイピング実行
+  deviation = PassNaviScraper.fetch_deviation(univ_id, department_name)
+  
+  if deviation
+    # データベース（PostgreSQL）に志望校と取得した偏差値を保存
+    client.exec_params(
+      "INSERT INTO target_schools (university_name, faculty_name, department_name, deviation_value, user_id) VALUES ($1, $2, $3, $4, $5)",
+      [univ_name, faculty_name, department_name, deviation.to_f, @user_id]
+    )
+    session[:success] = "志望校と偏差値（#{deviation}）を登録しました！"
+  else
+    session[:error] = "偏差値の取得に失敗しました。学部名を確認してください。"
+  end
+
+  redirect '/target_schools'
+end
+
+post '/target_schools_border' do
+  @user_id = session[:user_id]
+  univ_name = params[:univ_name]         # 例: "青学" などからIDを判定する仕組み、または直でID
+  faculty_name = params[:faculty_name]   # 例: "経済学部"
+  department_name = params[:department_name]  # 例: "経済学科"
+  
+  # 本来は大学名からパスナビの「univ_id（4桁の数字など）」を検索・特定する処理が必要
+  univ_id = "2260" # 例として青山学院大学のID（仮）
+  
+  # スクレイピング実行
+  border = PassNaviScraper.fetch_border(univ_name)
+  
+  if border
+    # データベース（PostgreSQL）に志望校と取得したボーダーを保存
+    client.exec_params(
+      "INSERT INTO target_schools (university_name, faculty_name, department_name, border_value, user_id) VALUES ($1, $2, $3, $4, $5)",
+      [univ_name, faculty_name, department_name, border.to_f, @user_id]
+    )
+    session[:success] = "志望校とボーダー（#{border}）を登録しました！"
+  else
+    session[:error] = "ボーダーの取得に失敗しました。学部名を確認してください。"
+  end
+
+  redirect '/target_schools'
+end
+
+post '/target_schools_id' do
+  @user_id = session[:user_id]
+  univ_name = params[:univ_name]         # 例: "青山学院"
+  faculty_name = params[:faculty_name]   # 例: "経済"
+  department_name = params[:department_name]  # 例: "経済"
+  
+  # スクレイピング実行
+  univ_id = PassNaviScraper.fetch_univ_id(univ_name)
+  
+  if univ_id
+    # データベース（PostgreSQL）に志望校と大学IDを保存
+    client.exec_params(
+      "INSERT INTO target_schools (university_name, faculty_name, department_name, passnavi_univ_id, user_id) VALUES ($1, $2, $3, $4, $5)",
+      [univ_name, faculty_name, department_name, univ_id, @user_id]
+    )
+    session[:success] = "志望校と大学ID（#{univ_id}）を登録しました！"
+  else
+    session[:error] = "大学IDの取得に失敗しました。"
+  end
+
+  redirect '/target_schools'
 end

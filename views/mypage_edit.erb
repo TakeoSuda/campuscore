@@ -1,4 +1,4 @@
-<form action="/mypage_edit" method="post">
+<form action="/mypage_edit" method="post" enctype="multipart/form-data">
 
     <div>
     <input type="text" name="name_kana" placeholder="名前(フリガナ)" value="<%= @user["name_kana"] %>">
@@ -10,6 +10,11 @@
 
     <div>
     <input type="email" name="email" placeholder="メールアドレス" value="<%= @user["email"] %>">
+    </div>
+
+    <div>
+    <label for="avatar">プロフィール画像</label>
+    <input type="file" name="avatar" id="avatar" accept="image/*">
     </div>
 
     <div>

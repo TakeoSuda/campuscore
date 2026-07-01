@@ -13,3 +13,6 @@ gem 'rake'                 # データベース操作（作成など）を行う
 gem 'racksh'
 gem 'irb'
 gem 'rack-cors' # CORS対策のために追加
+gem 'nokogiri'
+gem 'selenium-webdriver'
+gem 'cloudinary'

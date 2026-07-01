@@ -6,6 +6,12 @@
     <% users.each do |u| %>
         <p>
         <%= x %>:
+        <% if u['avatar'] %>
+            <img src="<%= u['avatar'] %>" alt="プロフィール画像" 
+            class="profile-avatar"
+            style="max-width: 50px; max-height: 50px; border: 1px solid #ccc; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.1); object-fit: cover;"
+            >
+        <% end %>
         <a href="/users_info/<%= u['id'] %>">学年【<%= u['grade'] %>】 <%= u['name'] %>(<%= u['name_kana'] %>) user ID: <%= u['id'] %></a></p>
         <% x += 1 %>
     <% end %>
