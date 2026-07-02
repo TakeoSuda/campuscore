@@ -14,6 +14,8 @@ require 'fileutils'
 require 'dotenv'
 Dotenv.load
 require 'cloudinary'
+require 'rtesseract'
+require 'google-cloud-vision'
 
 # --- 修正後のセキュリティ設定 ---
 
@@ -1463,42 +1465,59 @@ end
 
 post '/essay_writing' do
   @user_id = session[:user_id]
+  essay_file = params[:essay_image]
 
-  # ユーザーの自由英作文画像のアップロード処理
-  essay_file = params[:essay_image]  # フォームから送信されたファイル情報を取得
+  # 💡 最初にあらかじめ空の文字列を入れておき、スコープ（変数の有効範囲）の事故を防ぐ
+  detected_text = ""
+  unique_filename = nil
 
-  # --- 1. 画像の保存処理 (Cloudinary対応版) ---
   if essay_file
-    tempfile = essay_file[:tempfile]
+    tempfile = essay_file[:tempfile] # フォームから取り出したファイル
+    # --- ✨ Google Cloud Vision API による高精度OCR処理 ---
+    begin
+      # 1. 設置した JSON ファイルを使って、GoogleのAIクライアントを起動
+      # 1-1. 認証鍵ファイルのパスを環境変数（ENV）にセットする
+      ENV["VISION_CREDENTIALS"] = "google-credentials.json"
 
-    # 💡 ローカルへの保存処理の代わりに、Cloudinaryに直接アップロード
-    # RenderのEnvironmentに登録した鍵を使って自動的に通信してくれる
-    response = Cloudinary::Uploader.upload(tempfile.path,
-    ocr: "google_document_text"
-    )
-    
-    # 💡 返ってきたデータから、読み取られたテキストを取り出す
-      # (Cloudinaryのレスポンス構造からテキストを抽出する)
-      detected_text = ""
-      if response.dig('info', 'ocr', 'google_document_text', 'status') == 'complete'
-        detected_text = response.dig('info', 'ocr', 'google_document_text', 'data', 0, 'full_text_annotation', 'text')
+      # 1-2. 引数なしでクライアントを起動（自動的に上記の環境変数を読み込んでくれます）
+      image_annotator = Google::Cloud::Vision.image_annotator
+
+      # 2. 画像ファイルをGoogle Cloudに投げて、文章（ドキュメント）として解析を依頼
+      response = image_annotator.document_text_detection(image: tempfile.path)
+
+      # 3. 解析結果からテキストをまるごと抽出
+      if response.responses.first&.full_text_annotation
+        detected_text = response.responses.first.full_text_annotation.text.strip
       end
 
-    # 💡 データベース（essay_imageカラム）には、Cloudinary側で生成された「画像のURL」をそのまま保存する
-    # これにより、下のSQL処理（unique_filenameの箇所）を変更せずにそのまま動かせる
+      puts "====== [Google OCR 読み取り成功！] ======"
+      puts detected_text.inspect
+      puts "========================================"
+
+    rescue => e
+      # 万が一エラーが起きた場合は、原因が分かるようにDBにエラーメッセージを入れます
+      detected_text = "【Google OCRエラー】: #{e.message}"
+      puts detected_text
+    end
+
+    # --- 画像の保存処理 (Cloudinary) ---
+    response = Cloudinary::Uploader.upload(tempfile.path)
     unique_filename = response['secure_url']
   end
 
   if unique_filename
     client.exec_params(
-      "INSERT INTO essays (essay_image, user_id, title, ocr_text) VALUES ($1, $2, $3, $4, $5)", [unique_filename, @user_id, params[:title], detected_text])
-
+      "INSERT INTO essays (essay_image, user_id, title, ocr_text) VALUES ($1, $2, $3, $4)", 
+      [unique_filename, @user_id, params[:title], detected_text]
+    )
     session[:success] = "自由英作文の画像をアップロードしました。文字の自動解析も完了しました！"
   else
     session[:error] = "画像のアップロードに失敗しました。"
   end
 
-  erb :essay_writing_result
+  # 💡 処理が終わったら二重送信を防ぐために redirect するのがおすすめ
+  # (現在のままだとリロードしたときに同じ画像が何度もINSERTされてしまう)
+  redirect '/mypage'
 end
 
 

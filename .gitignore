@@ -4,3 +4,4 @@ DBeaver.app/
 # ついでにMac特有のキャッシュファイルなども除外しておくと良い
 .DS_Store
 
+google-credentials.json
