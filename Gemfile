@@ -16,3 +16,4 @@ gem 'rack-cors' # CORS対策のために追加
 gem 'nokogiri'
 gem 'selenium-webdriver'
 gem 'cloudinary'
+gem 'dotenv'

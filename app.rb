@@ -11,6 +11,8 @@ require 'nokogiri'
 require 'cgi'
 require 'selenium-webdriver'
 require 'fileutils'
+require 'dotenv'
+Dotenv.load
 require 'cloudinary'
 
 # --- 修正後のセキュリティ設定 ---
@@ -1451,3 +1453,54 @@ post '/target_schools_id' do
 
   redirect '/target_schools'
 end
+
+# 自由英作文の答案自動採点機能
+# 自由英作文の答案画像をアップロードする画面
+get '/essay_writing' do
+  @user_id = session[:user_id]
+  erb :essay_writing
+end
+
+post '/essay_writing' do
+  @user_id = session[:user_id]
+
+  # ユーザーの自由英作文画像のアップロード処理
+  essay_file = params[:essay_image]  # フォームから送信されたファイル情報を取得
+
+  # --- 1. 画像の保存処理 (Cloudinary対応版) ---
+  if essay_file
+    tempfile = essay_file[:tempfile]
+
+    # 💡 ローカルへの保存処理の代わりに、Cloudinaryに直接アップロード
+    # RenderのEnvironmentに登録した鍵を使って自動的に通信してくれる
+    response = Cloudinary::Uploader.upload(tempfile.path,
+    ocr: "google_document_text"
+    )
+    
+    # 💡 返ってきたデータから、読み取られたテキストを取り出す
+      # (Cloudinaryのレスポンス構造からテキストを抽出する)
+      detected_text = ""
+      if response.dig('info', 'ocr', 'google_document_text', 'status') == 'complete'
+        detected_text = response.dig('info', 'ocr', 'google_document_text', 'data', 0, 'full_text_annotation', 'text')
+      end
+
+    # 💡 データベース（essay_imageカラム）には、Cloudinary側で生成された「画像のURL」をそのまま保存する
+    # これにより、下のSQL処理（unique_filenameの箇所）を変更せずにそのまま動かせる
+    unique_filename = response['secure_url']
+  end
+
+  if unique_filename
+    client.exec_params(
+      "INSERT INTO essays (essay_image, user_id, title, ocr_text) VALUES ($1, $2, $3, $4, $5)", [unique_filename, @user_id, params[:title], detected_text])
+
+    session[:success] = "自由英作文の画像をアップロードしました。文字の自動解析も完了しました！"
+  else
+    session[:error] = "画像のアップロードに失敗しました。"
+  end
+
+  erb :essay_writing_result
+end
+
+
+
+

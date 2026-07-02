@@ -31,6 +31,7 @@ GEM
     concurrent-ruby (1.3.6)
     connection_pool (3.0.2)
     date (3.5.1)
+    dotenv (3.2.0)
     drb (2.2.3)
     erb (6.0.2)
     faraday (2.14.3)
@@ -183,6 +184,7 @@ PLATFORMS
 DEPENDENCIES
   bcrypt
   cloudinary
+  dotenv
   irb
   nokogiri
   pg
@@ -209,6 +211,7 @@ CHECKSUMS
   concurrent-ruby (1.3.6) sha256=6b56837e1e7e5292f9864f34b69c5a2cbc75c0cf5338f1ce9903d10fa762d5ab
   connection_pool (3.0.2) sha256=33fff5ba71a12d2aa26cb72b1db8bba2a1a01823559fb01d29eb74c286e62e0a
   date (3.5.1) sha256=750d06384d7b9c15d562c76291407d89e368dda4d4fff957eb94962d325a0dc0
+  dotenv (3.2.0) sha256=e375b83121ea7ca4ce20f214740076129ab8514cd81378161f11c03853fe619d
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
   erb (6.0.2) sha256=9fe6264d44f79422c87490a1558479bd0e7dad4dd0e317656e67ea3077b5242b
   faraday (2.14.3) sha256=1882247e6766615c8220b4392bf1d27f6ebb63d8e28267587cef1fb0bf37f278
