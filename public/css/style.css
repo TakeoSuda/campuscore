@@ -476,3 +476,19 @@ span.badge {
 
 
 
+/* 自由英作文提出機能のぐるぐるアニメーションの見た目 */
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db; /* お好きなテーマカラーに変えてもOK */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

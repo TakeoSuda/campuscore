@@ -1,4 +1,4 @@
-<form action="/essay_writing" method="post" enctype="multipart/form-data">
+<form action="/essay_writing" method="post" enctype="multipart/form-data" id="upload-form">
 
     <div>
     <label for="title">提出する自由英作文の情報（どの大学の何年度？英検何級？など）</label>
@@ -10,9 +10,14 @@
     <input type="file" name="essay_image" id="essay_image" accept="image/*">
     </div>
 
-    <div>
-    <input type="submit" value="自由英作文を提出する">
+    <div class="submit-area">
+        <input type="submit" id="submit-btn" value="自由英作文を提出する">
+        <!-- ぐるぐるアニメーションを表示する隠しエリアを追加 -->
+        <div id="loading-spinner" style="display: none; margin-top: 10px;">
+            <div class="spinner"></div>
+            <p style="color: #666; font-size: 0.9rem;">AIが文字を解析しています。しばらくお待ちください...</p>
+        </div>
     </div>
-
 </form>
 
+<script src="/js/file_upload.js"></script>
