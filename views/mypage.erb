@@ -43,6 +43,11 @@
         <h3>自由英作文を提出する</h3>
       </a>
 
+      <a href="/my_essay_results" class="nav-card">
+        <div class="icon">📝</div>
+        <h3>自由英作文の添削結果を見る</h3>
+      </a>
+      
       <a href="/target_schools" class="nav-card">
         <div class="icon">🎓</div>
         <h3>志望校情報を確認する</h3>
@@ -91,6 +96,13 @@
         <h3>単元ごとの正答率</h3>
       </a>
       <% end %>
+
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/users_essay_results" class="nav-card accent-card">
+        <div class="icon">✏️</div>
+        <h3>全ユーザーの自由英作文の添削結果</h3>
+      </a>
+      <% end %>    
 
     <%# <a href="/chat_rooms" class="nav-card">
       <div class="icon">💬</div>

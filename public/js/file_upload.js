@@ -1,18 +1,36 @@
 
 document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('upload-form');
-  const submitBtn = document.getElementById('submit-btn');
-  const loadingSpinner = document.getElementById('loading-spinner');
+  const formInputForm = document.getElementById('form-input-form');
+  const formInputBtn = document.getElementById('form-input-submit-btn');
+  const formLoadingSpinner = document.getElementById('form-input-loading-spinner');
 
-  if (form) {
-    form.addEventListener('submit', () => {
+  if (formInputForm) {
+    formInputForm.addEventListener('submit', () => {
       // 1. ボタンを無効化して連打を防ぐ
-      submitBtn.disabled = true;
-      submitBtn.style.opacity = '0.5';
-      submitBtn.value = '送信中...';
+      formInputBtn.disabled = true;
+      formInputBtn.style.opacity = '0.5';
+      formInputBtn.value = '送信中...';
 
       // 2. ぐるぐるアニメーションとメッセージを表示
-      loadingSpinner.style.display = 'block';
+      formLoadingSpinner.style.display = 'block';
     });
   }
+
+  const imageUploadForm = document.getElementById('image-upload-form');
+  const imageUploadBtn = document.getElementById('image-upload-submit-btn');
+  const imageLoadingSpinner = document.getElementById('image-upload-loading-spinner');
+
+  if (imageUploadForm) {
+    imageUploadForm.addEventListener('submit', () => {
+      // 1. ボタンを無効化して連打を防ぐ
+      imageUploadBtn.disabled = true;
+      imageUploadBtn.style.opacity = '0.5';
+      imageUploadBtn.value = '送信中...';
+
+      // 2. ぐるぐるアニメーションとメッセージを表示
+      imageLoadingSpinner.style.display = 'block';
+    });
+  }
+
+  
 });

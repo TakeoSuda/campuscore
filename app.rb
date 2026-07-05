@@ -1747,3 +1747,71 @@ post '/form_input_essay_writing' do
   end
 
 end
+
+
+# 全ユーザーの自由英作文の答案と添削結果を一覧表示する画面
+get '/users_essay_results' do
+  # 管理者かどうかのチェック
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless current_user
+  redirect '/' unless current_user["is_admin"].to_s == 't'
+
+  raw_results = client.exec_params(
+    "SELECT e.id, e.question, e.title, e.essay_image, e.form_input_text, 
+    e.corrected_text, e.score, e.feedback, u.name AS user_name, e.created_at, e.human_feedback,
+    eg.mistake, eg.reason
+     FROM essays e
+     JOIN users u ON e.user_id = u.id
+     JOIN essay_grammars eg ON e.id = eg.essay_id
+     ORDER BY e.created_at DESC"
+  ).to_a
+
+  @grouped_essays = raw_results.group_by { |row| row["id"] }
+
+  puts @grouped_essays
+
+
+  erb :users_essay_results
+end
+
+# 全ユーザーの自由英作文の答案に対して、個別に人間の講師の添削メッセージを追加する画面
+post '/users_essay_results/:essay_id/feedback' do
+  essay_id = params[:essay_id]
+  human_feedback = params[:human_feedback]
+
+  # 管理者かどうかのチェック
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless current_user
+  redirect '/' unless current_user["is_admin"].to_s == 't'
+
+  # essaysテーブルのhuman_feedbackカラムを更新する
+  client.exec_params(
+    "UPDATE essays SET human_feedback = $1 WHERE id = $2",
+    [human_feedback, essay_id]
+  )
+
+  session[:success] = "添削メッセージを更新しました。"
+  redirect '/users_essay_results'
+end
+
+#　各ユーザーが自分の書いた英作文答案に対する、添削結果を確認する画面
+get '/my_essay_results' do
+  @user_id = session[:user_id]
+
+  @results = client.exec_params(
+    "SELECT e.id, e.question, e.title, e.essay_image, e.form_input_text, 
+    e.corrected_text, e.score, e.feedback, u.name AS user_name, e.created_at, e.human_feedback,
+    eg.mistake, eg.reason
+     FROM essays e
+     JOIN users u ON e.user_id = u.id
+     JOIN essay_grammars eg ON e.id = eg.essay_id
+     WHERE u.id = $1
+     ORDER BY e.created_at DESC",
+    [@user_id]
+  ).to_a
+
+  @grouped_essays = @results.group_by { |row| row["id"] }
+
+  erb :my_essay_results
+end
+

@@ -1,7 +1,7 @@
 <h1>自由英作文添削システム</h1>
 
 <h2>フォーム入力型の添削</h2>
-<form action="/form_input_essay_writing" method="post" enctype="multipart/form-data" id="upload-form">
+<form action="/form_input_essay_writing" method="post" enctype="multipart/form-data" id="form-input-form">
 
     <div>
     <label for="title">⭐️提出する自由英作文の情報（どの大学の何年度？英検何級？など）</label>
@@ -21,9 +21,9 @@
     </div>
 
     <div class="submit-area">
-        <input type="submit" id="submit-btn" value="自由英作文を提出する">
+        <input type="submit" id="form-input-submit-btn" value="自由英作文を提出する">
         <!-- ぐるぐるアニメーションを表示する隠しエリアを追加 -->
-        <div id="loading-spinner" style="display: none; margin-top: 10px;">
+        <div id="form-input-loading-spinner" style="display: none; margin-top: 10px;">
             <div class="spinner"></div>
             <p style="color: #666; font-size: 0.9rem;">AIがあなたの英作文を解析しています。しばらくお待ちください...</p>
         </div>
@@ -33,7 +33,7 @@
 <br>
 
 <h2>画像提出型の添削</h2>
-<form action="/essay_writing" method="post" enctype="multipart/form-data" id="upload-form">
+<form action="/essay_writing" method="post" enctype="multipart/form-data" id="image-upload-form">
 
     <div>
     <label for="title">⭐️提出する自由英作文の情報（どの大学の何年度？英検何級？など）</label>
@@ -53,9 +53,9 @@
     </div>
 
     <div class="submit-area">
-        <input type="submit" id="submit-btn" value="自由英作文を提出する">
+        <input type="submit" id="image-upload-submit-btn" value="自由英作文を提出する">
         <!-- ぐるぐるアニメーションを表示する隠しエリアを追加 -->
-        <div id="loading-spinner" style="display: none; margin-top: 10px;">
+        <div id="image-upload-loading-spinner" style="display: none; margin-top: 10px;">
             <div class="spinner"></div>
             <p style="color: #666; font-size: 0.9rem;">AIが文字を解析しています。しばらくお待ちください...</p>
         </div>

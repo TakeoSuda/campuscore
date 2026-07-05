@@ -1,0 +1,23 @@
+<h1>全ユーザーの自由英作文の添削結果</h1>
+
+<% @grouped_essays.each do |essay_id, essays| %>
+  <div>
+    <h2><%= essays.first['title'] %></h2>
+    <p><strong>ユーザー:</strong> <%= essays.first['user_name'] %></p>
+    <p><strong>質問:</strong> <%= essays.first['question'] %></p>
+    <p><strong>元の文章:</strong> <%= essays.first['form_input_text'] %></p>
+    <p><strong>修正後の文章:</strong> <%= essays.first['corrected_text'] %></p>
+    <p><strong>スコア:</strong> <%= essays.first['score'] %></p>
+    <% essays.each do |essay| %>
+      <p><strong>ミス:</strong> <%= essay['mistake'] %></p>
+      <p><strong>理由:</strong> <%= essay['reason'] %></p>
+    <% end %>
+    <p><strong>フィードバック:</strong> <%= essays.first['feedback'] %></p>
+    <p><strong>講師からのアドバイス:</strong> <%= essays.first['human_feedback'] %></p>
+    <form action="/users_essay_results/<%= essay_id %>/feedback" method="post">
+      <textarea name="human_feedback" placeholder="フィードバックを入力" style="width: 100%; height: 100px;"></textarea>
+      <button type="submit">フィードバックを追加</button>
+    </form>
+  </div>
+<% end %>
+
