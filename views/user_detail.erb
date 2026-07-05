@@ -122,7 +122,9 @@
                 <p>歴史総合: <%= exam['history_basic'] %> 点</p>
                 <p>公共: <%= exam['civics_basic'] %> 点</p>
                 <p>情報: <%= exam['informatics'] %> 点</p>
-                <p>結果画像: <img src="<%= exam['mock_exam_result_image_url'] %>" alt="模試結果" style="max-width: 100%;"></p>
+                <p>結果画像: <% if exam['mock_exam_result_image_url'] %>
+                    <img src="<%= exam['mock_exam_result_image_url'] %>" alt="模試結果" style="max-width: 100%;">
+                <% end %></p>
                 <hr>
             <% end %>
     </div>
