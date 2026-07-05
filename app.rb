@@ -236,7 +236,13 @@ get '/users_info/:id' do
            consults.content AS c_content, consults.date AS c_date,
            instructions.content AS i_content, instructions.created_at AS i_created_at,
            instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at, instruction_replies.user_id AS ir_user_id,
-          mock_exams.english_r AS me_english_r, mock_exams.english_l AS me_english_l, mock_exams.math_1a AS me_math_1a, mock_exams.math_2bc AS me_math_2bc, mock_exams.japanese AS me_japanese, mock_exams.physics_basic AS me_physics_basic, mock_exams.chemistry_basic AS me_chemistry_basic, mock_exams.biology_basic AS me_biology_basic, mock_exams.earth_science_basic AS me_earth_science_basic, mock_exams.physics AS me_physics, mock_exams.chemistry AS me_chemistry, mock_exams.biology AS me_biology, mock_exams.earth_science AS me_earth_science, mock_exams.world_history AS me_world_history, mock_exams.japanese_history AS me_japanese_history, mock_exams.geography AS me_geography, mock_exams.civics_ethics AS me_civics_ethics, mock_exams.civics_politics AS me_civics_politics, mock_exams.geography_basic AS me_geography_basic, mock_exams.history_basic AS me_history_basic, mock_exams.civics_basic AS me_civics_basic, mock_exams.informatics AS me_informatics, mock_exams.taken_at AS me_taken_at
+          mock_exams.title AS me_title, mock_exams.exam_type AS me_exam_type, mock_exams.english_r AS me_english_r, mock_exams.english_l AS me_english_l, 
+          mock_exams.math_1a AS me_math_1a, mock_exams.math_2bc AS me_math_2bc, mock_exams.japanese AS me_japanese, mock_exams.physics_basic AS me_physics_basic, 
+          mock_exams.chemistry_basic AS me_chemistry_basic, mock_exams.biology_basic AS me_biology_basic, mock_exams.earth_science_basic AS me_earth_science_basic, 
+          mock_exams.physics AS me_physics, mock_exams.chemistry AS me_chemistry, mock_exams.biology AS me_biology, mock_exams.earth_science AS me_earth_science, 
+          mock_exams.world_history AS me_world_history, mock_exams.japanese_history AS me_japanese_history, mock_exams.geography AS me_geography, mock_exams.civics_ethics AS me_civics_ethics, 
+          mock_exams.civics_politics AS me_civics_politics, mock_exams.geography_basic AS me_geography_basic, mock_exams.history_basic AS me_history_basic, 
+          mock_exams.civics_basic AS me_civics_basic, mock_exams.informatics AS me_informatics, mock_exams.taken_at AS me_taken_at, mock_exams.mock_exam_result_image_url AS me_mock_exam_result_image_url
     FROM users 
     LEFT JOIN plans ON users.id = plans.user_id 
     LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
@@ -257,7 +263,10 @@ get '/users_info/:id' do
     user_data['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     user_data['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
     user_data['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
-    user_data['mock_exams'] << { 'english_r' => row['me_english_r'], 'english_l' => row['me_english_l'], 'math_1a' => row['me_math_1a'], 'math_2bc' => row['me_math_2bc'], 'japanese' => row['me_japanese'], 'physics_basic' => row['me_physics_basic'], 'chemistry_basic' => row['me_chemistry_basic'], 'biology_basic' => row['me_biology_basic'], 'earth_science_basic' => row['me_earth_science_basic'], 'physics' => row['me_physics'], 'chemistry' => row['me_chemistry'], 'biology' => row['me_biology'], 'earth_science' => row['me_earth_science'], 'world_history' => row['me_world_history'], 'japanese_history' => row['me_japanese_history'], 'geography' => row['me_geography'], 'civics_ethics' => row['me_civics_ethics'], 'civics_politics' => row['me_civics_politics'], 'geography_basic' => row['me_geography_basic'], 'history_basic' => row['me_history_basic'], 'civics_basic' => row['me_civics_basic'], 'informatics' => row['me_informatics'], 'taken_at' => row['me_taken_at']} if row['me_english_r']
+    user_data['mock_exams'] << { 'title' => row['me_title'], 'exam_type' => row['me_exam_type'], 'english_r' => row['me_english_r'], 'english_l' => row['me_english_l'], 'math_1a' => row['me_math_1a'], 'math_2bc' => row['me_math_2bc'], 
+    'japanese' => row['me_japanese'], 'physics_basic' => row['me_physics_basic'], 'chemistry_basic' => row['me_chemistry_basic'], 'biology_basic' => row['me_biology_basic'], 'earth_science_basic' => row['me_earth_science_basic'], 'physics' => row['me_physics'], 
+    'chemistry' => row['me_chemistry'], 'biology' => row['me_biology'], 'earth_science' => row['me_earth_science'], 'world_history' => row['me_world_history'], 'japanese_history' => row['me_japanese_history'], 'geography' => row['me_geography'], 'civics_ethics' => row['me_civics_ethics'], 
+    'civics_politics' => row['me_civics_politics'], 'geography_basic' => row['me_geography_basic'], 'history_basic' => row['me_history_basic'], 'civics_basic' => row['me_civics_basic'], 'informatics' => row['me_informatics'], 'taken_at' => row['me_taken_at'], 'mock_exam_result_image_url' => row['me_mock_exam_result_image_url'] }
   end
 
 
@@ -857,6 +866,8 @@ get '/mock_exams' do
 end
 
 post '/mock_exams/new' do
+  title = params[:title]
+  exam_type = params[:exam_type]
   user_id = session[:user_id]
   english_r = params[:english_r].to_i
   english_l = params[:english_l].to_i
@@ -882,11 +893,32 @@ post '/mock_exams/new' do
   informatics = params[:informatics].to_i
   taken_at = params[:taken_at]
 
-  client.exec_params(
-    "INSERT INTO mock_exams (user_id, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)",
-    [user_id, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at]
-  )
+  # 模試結果画像のアップロード処理
+  mock_exam_result_image_file = params[:mock_exam_result_image]
 
+  # --- 1. 画像の保存処理 (Cloudinary対応版) ---
+  if mock_exam_result_image_file
+    tempfile = mock_exam_result_image_file[:tempfile]
+
+    # 💡 ローカルへの保存処理の代わりに、Cloudinaryに直接アップロード
+    # RenderのEnvironmentに登録した鍵を使って自動的に通信してくれる
+    response = Cloudinary::Uploader.upload(tempfile.path)
+    
+    # 💡 データベース（avatarカラム）には、Cloudinary側で生成された「画像のURL」をそのまま保存する
+    # これにより、下のSQL処理（unique_filenameの箇所）を変更せずにそのまま動かせる
+    unique_filename = response['secure_url']
+  else
+    # 新しい画像が送られてこなかった場合は、既存の値を維持する処理、
+    # あるいは現在のコードの仕様通り、変更なし（または既存のURLをそのまま渡す）に調整して
+    # （※もし「画像を変更しない時」にDBの値が消えてしまう場合は、params等から既存の値を引き継ぐ必要がある）
+    unique_filename = nil 
+  end
+
+
+  client.exec_params(
+    "INSERT INTO mock_exams (title, exam_type, user_id, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at, mock_exam_result_image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)",
+    [title, exam_type, user_id, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at, unique_filename]
+  )
   redirect '/mock_exams'
 end
 
@@ -905,6 +937,8 @@ get '/mock_exams/:id/edit' do
 end
 
 post '/mock_exams/:id/edit' do
+  title = params[:title]
+  exam_type = params[:exam_type]
   exam_id = params[:id]
   user_id = session[:user_id]
   english_r = params[:english_r].to_i
@@ -931,9 +965,30 @@ post '/mock_exams/:id/edit' do
   informatics = params[:informatics].to_i
   taken_at = params[:taken_at]
 
+  # 模試結果画像のアップロード処理
+  mock_exam_result_image_file = params[:mock_exam_result_image]
+
+  # --- 1. 画像の保存処理 (Cloudinary対応版) ---
+  if mock_exam_result_image_file
+    tempfile = mock_exam_result_image_file[:tempfile]
+
+    # 💡 ローカルへの保存処理の代わりに、Cloudinaryに直接アップロード
+    # RenderのEnvironmentに登録した鍵を使って自動的に通信してくれる
+    response = Cloudinary::Uploader.upload(tempfile.path)
+    
+    # 💡 データベース（avatarカラム）には、Cloudinary側で生成された「画像のURL」をそのまま保存する
+    # これにより、下のSQL処理（unique_filenameの箇所）を変更せずにそのまま動かせる
+    unique_filename = response['secure_url']
+  else
+    # 新しい画像が送られてこなかった場合は、既存の値を維持する処理、
+    # あるいは現在のコードの仕様通り、変更なし（または既存のURLをそのまま渡す）に調整して
+    # （※もし「画像を変更しない時」にDBの値が消えてしまう場合は、params等から既存の値を引き継ぐ必要がある）
+    unique_filename = nil 
+  end
+
   client.exec_params(
-    "UPDATE mock_exams SET english_r=$1, english_l=$2, math_1a=$3, math_2bc=$4, japanese=$5, physics_basic=$6, chemistry_basic=$7, biology_basic=$8, earth_science_basic=$9, physics=$10, chemistry=$11, biology=$12, earth_science=$13, world_history=$14, japanese_history=$15, geography=$16, civics_ethics=$17, civics_politics=$18, geography_basic=$19, history_basic=$20, civics_basic=$21, informatics=$22, taken_at=$23 WHERE id=$24 AND user_id=$25",
-    [english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at, exam_id, user_id]
+    "UPDATE mock_exams SET title=$1, exam_type=$2, english_r=$3, english_l=$4, math_1a=$5, math_2bc=$6, japanese=$7, physics_basic=$8, chemistry_basic=$9, biology_basic=$10, earth_science_basic=$11, physics=$12, chemistry=$13, biology=$14, earth_science=$15, world_history=$16, japanese_history=$17, geography=$18, civics_ethics=$19, civics_politics=$20, geography_basic=$21, history_basic=$22, civics_basic=$23, informatics=$24, taken_at=$25, mock_exam_result_image_url=$26 WHERE id=$27 AND user_id=$28",
+    [title, exam_type, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at, unique_filename, exam_id, user_id]
   )
   session[:flash] = "模試・入試結果を更新しました。"
 

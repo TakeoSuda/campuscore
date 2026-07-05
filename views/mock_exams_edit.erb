@@ -1,5 +1,21 @@
 <h2>模試・入試結果を編集する</h2>
-<form action="/mock_exams/<%= @mock_exam['id'] %>/edit" method="post">
+<form action="/mock_exams/<%= @mock_exam['id'] %>/edit" method="post" enctype="multipart/form-data">
+
+    <div>
+        <label for="exam_type">模試の種類:</label>
+        <select name="exam_type" id="exam_type" required>
+            <option value="">選択してください</option>
+            <option value="共通テスト型" <%= 'selected' if @mock_exam['exam_type'] == '共通テスト型' %>>共通テスト型</option>
+            <option value="記述型" <%= 'selected' if @mock_exam['exam_type'] == '記述型' %>>記述型</option>
+            <option value="私大型" <%= 'selected' if @mock_exam['exam_type'] == '私大型' %>>私大型</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="title">模試の名前:</label>
+        <input type="text" name="title" id="title" placeholder="模試の名前を入力してください" value="<%= @mock_exam['title'] %>" required>
+    </div>
+
     <div>
         <label for="taken_at">受験日:</label>
         <input type="date" name="taken_at" id="taken_at" placeholder="受験日" value="<%= @mock_exam['taken_at'] %>" required>
@@ -113,6 +129,11 @@
     <div>
         <label for="informatics">情報:</label>
         <input type="number" name="informatics" id="informatics" placeholder="情報" value="<%= @mock_exam['informatics'] %>"><span> 点</span>
+    </div>
+
+    <div>
+        <label for="mock_exam_result_image">模試結果画像:</label>
+        <input type="file" name="mock_exam_result_image" id="mock_exam_result_image" accept="image/*">
     </div>
 
     <input type="submit" value="保存">

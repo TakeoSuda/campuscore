@@ -98,6 +98,8 @@
             <h1>模試・入試結果</h1>
             <% @user['mock_exams'].each do |exam| %>
                 <p>受験日: <%= exam['taken_at'] %></p>
+                <p>模試の種類: <%= exam['exam_type'] %></p>
+                <p>模試の名前: <%= exam['title'] %></p>
                 <p>英語リーディング: <%= exam['english_r'] %> 点</p>
                 <p>英語リスニング: <%= exam['english_l'] %> 点</p>
                 <p>数学ⅠA: <%= exam['math_1a'] %> 点</p>
@@ -120,6 +122,7 @@
                 <p>歴史総合: <%= exam['history_basic'] %> 点</p>
                 <p>公共: <%= exam['civics_basic'] %> 点</p>
                 <p>情報: <%= exam['informatics'] %> 点</p>
+                <p>結果画像: <img src="<%= exam['mock_exam_result_image_url'] %>" alt="模試結果" style="max-width: 100%;"></p>
                 <hr>
             <% end %>
     </div>

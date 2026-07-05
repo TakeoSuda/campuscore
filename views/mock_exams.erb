@@ -5,7 +5,22 @@
 <h1>模試・入試結果</h1>
 
 <h2>模試・入試結果を入力する</h2>
-<form action="/mock_exams/new" method="post">
+<form action="/mock_exams/new" method="post" enctype="multipart/form-data">
+    <div>
+        <label for="exam_type">模試の種類:</label>
+        <select name="exam_type" id="exam_type" required>
+            <option value="">選択してください</option>
+            <option value="共通テスト型">共通テスト型</option>
+            <option value="記述型">記述型</option>
+            <option value="私大型">私大型</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="title">模試の名前:</label>
+        <input type="text" name="title" id="title" placeholder="模試の名前を入力してください" required>
+    </div>
+
     <div>
         <label for="taken_at">受験日:</label>
         <input type="date" name="taken_at" id="taken_at" placeholder="受験日" required>
@@ -121,6 +136,11 @@
         <input type="number" name="informatics" id="informatics" placeholder="情報"><span> 点</span>
     </div>
 
+    <div>
+        <label for="mock_exam_result_image">模試結果画像:</label>
+        <input type="file" name="mock_exam_result_image" id="mock_exam_result_image" accept="image/*">
+    </div>
+
     <input type="submit" value="保存">
 </form>
 
@@ -130,6 +150,8 @@
     <h2>過去の模試・入試結果</h2>
 <% @mock_exams.each do |exam| %>
   <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
+    <p>模試の種類: <%= exam['exam_type'] %></p>
+    <p>模試の名前: <%= exam['title'] %></p>
     <p>受験日: <%= exam['taken_at'] %></p>
     <p>英語R: <%= exam['english_r'] %><span> 点</span></p>
     <p>英語L: <%= exam['english_l'] %><span> 点</span></p>
@@ -153,12 +175,16 @@
     <p>歴史総合: <%= exam['history_basic'] %><span> 点</span></p>
     <p>公共: <%= exam['civics_basic'] %><span> 点</span></p>
     <p>情報: <%= exam['informatics'] %><span> 点</span></p>
-    <form action="/mock_exams/<%= exam['id'] %>/delete" method="post" onsubmit="return confirm('本当に削除しますか？');" style="display: inline;">
+    <% if exam['mock_exam_result_image_url'] && !exam['mock_exam_result_image_url'].empty? %>
+      <p>模試結果画像:</p>
+      <img src="<%= exam['mock_exam_result_image_url'] %>" alt="模試結果画像" style="max-width: 100%; height: auto;">
+    <% end %>
+    <p><form action="/mock_exams/<%= exam['id'] %>/delete" method="post" onsubmit="return confirm('本当に削除しますか？');" style="display: inline;">
     <input type="submit" value="この模試・入試結果を削除する">
     </form>
     <a href="/mock_exams/<%= exam['id'] %>/edit" style="display: inline;">
     <input type="submit" value="この模試・入試結果を編集する">
-    </a>
+    </a></p>
   </div>
   
   
