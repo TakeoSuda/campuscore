@@ -5,3 +5,5 @@ DBeaver.app/
 .DS_Store
 
 google-credentials.json
+
+.env

@@ -19,4 +19,6 @@ gem 'cloudinary'
 gem 'dotenv'
 gem 'rtesseract'
 gem 'google-cloud-vision'
+gem 'ruby-openai'
+
 

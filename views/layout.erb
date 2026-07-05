@@ -28,18 +28,18 @@
 
         <!-- PC用メニュー -->
         <nav class="pc-menu">
-        <% if session[:user_id] %>
-        <a href="/mypage">マイページ</a>
-        <a href="/instructions">学習アドバイス</a>
-        <a href="/plans">勉強計画</a>
-<%#         <a href="/chat_rooms">質問一覧</a>
-        <a href="/chat_rooms/new">質問をする</a> %>
-        <a href="/diary">勉強日記</a>
-        <a href="/consults">面談記録</a>
-        <a href="/recommends">おすすめ参考書</a>
-        <a href="/recommends_list">優良参考書一覧</a>
-        <a href="/logout">ログアウト</a>
-        <% end %>
+          <% if session[:user_id] %>
+          <a href="/mypage">マイページ</a>
+          <a href="/instructions">学習アドバイス</a>
+          <a href="/plans">勉強計画</a>
+        <%#  <a href="/chat_rooms">質問一覧</a>
+          <a href="/chat_rooms/new">質問をする</a> %>
+          <a href="/diary">勉強日記</a>
+          <a href="/consults">面談記録</a>
+          <a href="/recommends">おすすめ参考書</a>
+          <a href="/recommends_list">優良参考書一覧</a>
+          <a href="/logout">ログアウト</a>
+          <% end %>
         </nav>
 
         <!-- ハンバーガー（スマホ用） -->

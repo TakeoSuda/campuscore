@@ -1,3 +1,5 @@
+require 'dotenv'
+Dotenv.load
 require 'sinatra'
 require 'pg'
 require 'bcrypt'
@@ -11,11 +13,11 @@ require 'nokogiri'
 require 'cgi'
 require 'selenium-webdriver'
 require 'fileutils'
-require 'dotenv'
-Dotenv.load
 require 'cloudinary'
 require 'rtesseract'
 require 'google-cloud-vision'
+require 'openai'
+
 
 # --- 修正後のセキュリティ設定 ---
 
@@ -1520,6 +1522,7 @@ end
 
 post '/essay_writing' do
   @user_id = session[:user_id]
+  @question = params[:question]
   essay_file = params[:essay_image]
 
   # 💡 最初にあらかじめ空の文字列を入れておき、スコープ（変数の有効範囲）の事故を防ぐ
@@ -1534,7 +1537,7 @@ post '/essay_writing' do
       # 1-1. 認証鍵ファイルのパスを環境変数（ENV）にセットする
       ENV["VISION_CREDENTIALS"] = "google-credentials.json"
 
-      # 1-2. 引数なしでクライアントを起動（自動的に上記の環境変数を読み込んでくれます）
+      # 1-2. 引数なしでクライアントを起動（自動的に上記の環境変数を読み込んでくれる）
       image_annotator = Google::Cloud::Vision.image_annotator
 
       # 2. 画像ファイルをGoogle Cloudに投げて、文章（ドキュメント）として解析を依頼
@@ -1560,21 +1563,187 @@ post '/essay_writing' do
     unique_filename = response['secure_url']
   end
 
-  if unique_filename
-    client.exec_params(
-      "INSERT INTO essays (essay_image, user_id, title, ocr_text) VALUES ($1, $2, $3, $4)", 
-      [unique_filename, @user_id, params[:title], detected_text]
+
+  # --------------------------------------------------
+  # 🚀【ここから新規追加】OpenAIによるAI添削処理
+  # --------------------------------------------------
+  
+  # 1. OpenAIクライアントの初期化（自動で ENV['OPENAI_API_KEY'] を読み込みます）
+  openai_client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
+
+  # 🧪 試しにターミナルにキーの最初と最後だけを表示させてみる
+  puts "=== 読み込まれているキー: #{ENV['OPENAI_API_KEY']&.start_with?('sk') ? 'OK' : '空っぽです'} ==="
+    
+  # 2. AIに「プロの英語教師」としての役割と、返却してほしいJSONの形（プロンプト）を指示する
+  system_prompt = <<~TEXT
+    あなたは親切で優秀な英語のプロ講師です。
+    ユーザーが書いた自由英作文の文章を添削し、必ず指定された以下のJSON形式でのみ返答してください。
+    挨拶や解説などの余計なテキストは一切含めず、純粋なJSONデータだけを返してください。
+    
+    {
+      "original_text": "元の文章",
+      "corrected_text": "文法や表現を綺麗に修正した後の完璧な文章",
+      "score": 100点満点中の点数(数値のみ),
+      "feedback": "全体的な講評や、もっと良くなるためのアドバイス（日本語）",
+      "grammars": [
+        {"mistake": "間違っていた部分や不自然な表現", "reason": "なぜ間違っているか、どう直すべきかの丁寧な解説（日本語）"}
+      ]
+    }
+  TEXT
+
+  begin
+    # 3. OpenAIのAPIへリクエストを送信
+    response = openai_client.chat(
+      parameters: {
+        model: "gpt-4o-mini", # コスパ最強＆爆速の最新モデル
+        response_format: { type: "json_object" }, # 確実にJSONで返してもらうための魔法の設定
+        messages: [
+          { role: "system", content: system_prompt },
+          { 
+            role: "user", 
+            # 💡 question と detected_text を分かりやすくドッキングさせて渡す
+            content: "【質問/お題】\n#{@question}\n\n【ユーザーが書いた英作文】\n#{detected_text}" 
+          }
+        ],
+        temperature: 0.3 # 回答のブレを抑え、安定した添削を行わせる設定
+      }
     )
-    session[:success] = "自由英作文の画像をアップロードしました。文字の自動解析も完了しました！"
-  else
-    session[:error] = "画像のアップロードに失敗しました。"
+
+    # 4. AIから返ってきたJSON形式の文字列を取り出す
+    ai_response_json = response.dig("choices", 0, "message", "content")
+    
+    # 5. JSON文字列をRubyのハッシュ（連想配列）に変換して、ビュー（ERB）に渡せるようにする
+    @result = JSON.parse(ai_response_json)
+
+
+    # 6. AIによる添削結果をessaysテーブルとessay_grammarsテーブルに格納する。また、保存と同時に、生成されたばかりの id をその場で取得する。
+    if unique_filename
+    
+      essay_result = client.exec_params(
+        "INSERT INTO essays (essay_image, question, user_id, title, ocr_text, corrected_text, score, feedback) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+        [unique_filename, @question, @user_id, @title, detected_text, @result["corrected_text"], @result["score"], @result["feedback"]]
+      )
+      # 配列（ハッシュの配列）として結果が返ってくるので、最初の1件の "id" を取り出す
+      essay_id = essay_result.first["id"].to_i
+
+      if @result["grammars"] && @result["grammars"].is_a?(Array)
+        @result["grammars"].each do |grammar|
+          client.exec_params(
+            "INSERT INTO essay_grammars (essay_id, mistake, reason) VALUES ($1, $2, $3)",
+            [essay_id, grammar["mistake"], grammar["reason"]]
+          )
+        end
+      end
+      session[:success] = "自由英作文の画像をアップロードしました。文字の自動解析も完了しました！"
+
+    else
+      session[:error] = "処理に失敗しました。"
+    end
+
+
+    # 7. 添削結果を表示する専用のERB画面（次に作ります）へ進む
+    erb :essay_writing_result
+
+  rescue => e
+    # 万が一AI処理でエラーが起きた場合のセーフティ
+    puts "AI添削エラーが発生しました: #{e.message}"
+    @error_message = "AI添削中にエラーが発生しました。もう一度お試しいただくか、管理者にお問い合わせください。"
+    erb :essay_writing # 必要に応じてエラー画面を用意（または既存のフォーム画面に戻すなど）
   end
 
-  # 💡 処理が終わったら二重送信を防ぐために redirect するのがおすすめ
-  # (現在のままだとリロードしたときに同じ画像が何度もINSERTされてしまう)
-  redirect '/mypage'
 end
 
 
 
 
+# 画面から直接、自由英作文の文章を入力してAIに添削させる場合の処理
+post '/form_input_essay_writing' do
+  @user_id = session[:user_id]
+  @title = params[:title]
+  @question = params[:question]
+
+  # 💡 最初にあらかじめ空の文字列を入れておき、スコープ（変数の有効範囲）の事故を防ぐ
+  form_input_text = ""
+  question = ""
+
+  form_input_text = params[:form_input_text] if params[:form_input_text]
+  question = params[:question] if params[:question]
+
+  # --------------------------------------------------
+  # 🚀【ここから新規追加】OpenAIによるAI添削処理
+  # --------------------------------------------------
+  
+  # 1. OpenAIクライアントの初期化（自動で ENV['OPENAI_API_KEY'] を読み込みます）
+  openai_client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
+
+  # 2. AIに「プロの英語教師」としての役割と、返却してほしいJSONの形（プロンプト）を指示する
+  system_prompt = <<~TEXT
+    あなたは親切で優秀な英語のプロ講師です。
+    ユーザーが書いた自由英作文の文章を添削し、必ず指定された以下のJSON形式でのみ返答してください。
+    挨拶や解説などの余計なテキストは一切含めず、純粋なJSONデータだけを返してください。
+    
+    {
+      "original_text": "元の文章",
+      "corrected_text": "文法や表現を綺麗に修正した後の完璧な文章",
+      "score": 100点満点中の点数(数値のみ),
+      "feedback": "全体的な講評や、もっと良くなるためのアドバイス（日本語）",
+      "grammars": [
+        {"mistake": "間違っていた部分や不自然な表現", "reason": "なぜ間違っているか、どう直すべきかの丁寧な解説（日本語）"}
+      ]
+    }
+  TEXT
+
+  begin
+    # 3. OpenAIのAPIへリクエストを送信
+    response = openai_client.chat(
+      parameters: {
+        model: "gpt-4o-mini", # コスパ最強＆爆速の最新モデル
+        response_format: { type: "json_object" }, # 確実にJSONで返してもらうための魔法の設定
+        messages: [
+          { role: "system", content: system_prompt },
+          { 
+            role: "user", 
+            # 💡 question と form_input_text を分かりやすくドッキングさせて渡す
+            content: "【質問/お題】\n#{question}\n\n【ユーザーが書いた英作文】\n#{form_input_text}" 
+          }
+        ],
+        temperature: 0.3 # 回答のブレを抑え、安定した添削を行わせる設定
+      }
+    )
+
+    # 4. AIから返ってきたJSON形式の文字列を取り出す
+    ai_response_json = response.dig("choices", 0, "message", "content")
+    
+    # 5. JSON文字列をRubyのハッシュ（連想配列）に変換して、ビュー（ERB）に渡せるようにする
+    @result = JSON.parse(ai_response_json)
+
+    puts @result
+
+    # 6. AIによる添削結果をessaysテーブルとessay_grammarsテーブルに格納する。また、保存と同時に、生成されたばかりの id をその場で取得する。
+    essay_result = client.exec_params(
+      "INSERT INTO essays (question, user_id, title, form_input_text, corrected_text, score, feedback) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+      [@question, @user_id, @title, form_input_text, @result["corrected_text"], @result["score"], @result["feedback"]]
+    )
+    # 配列（ハッシュの配列）として結果が返ってくるので、最初の1件の "id" を取り出す
+    essay_id = essay_result.first["id"].to_i
+
+    if @result["grammars"] && @result["grammars"].is_a?(Array)
+      @result["grammars"].each do |grammar|
+        client.exec_params(
+          "INSERT INTO essay_grammars (essay_id, mistake, reason) VALUES ($1, $2, $3)",
+          [essay_id, grammar["mistake"], grammar["reason"]]
+        )
+      end
+    end
+
+    # 7. 添削結果を表示する専用のERB画面（次に作ります）へ進む
+    erb :essay_writing_result
+
+  rescue => e
+    # 万が一AI処理でエラーが起きた場合のセーフティ
+    puts "AI添削エラーが発生しました: #{e.message}"
+    @error_message = "AI添削中にエラーが発生しました。もう一度お試しいただくか、管理者にお問い合わせください。"
+    erb :essay_writing # 必要に応じてエラー画面を用意（または既存のフォーム画面に戻すなど）
+  end
+
+end

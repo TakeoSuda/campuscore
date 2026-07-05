@@ -1,12 +1,54 @@
-<form action="/essay_writing" method="post" enctype="multipart/form-data" id="upload-form">
+<h1>自由英作文添削システム</h1>
+
+<h2>フォーム入力型の添削</h2>
+<form action="/form_input_essay_writing" method="post" enctype="multipart/form-data" id="upload-form">
 
     <div>
-    <label for="title">提出する自由英作文の情報（どの大学の何年度？英検何級？など）</label>
+    <label for="title">⭐️提出する自由英作文の情報（どの大学の何年度？英検何級？など）</label>
     </label>
     <input type="text" name="title" id="title" placeholder="自由英作文の情報を入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;">
     </div>
+
     <div>
-    <label for="essay_image">提出する自由英作文の画像</label>
+    <label for="question">⭐️自由英作文の問題内容（Should children stop using social media?など）</label>
+    </label>
+    <textarea name="question" id="question" placeholder="自由英作文の問題内容を入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; min-height: 50px;"></textarea>
+    </div>
+
+    <div>
+    <label for="form_input_text">⭐️自由英作文の文章（正確な英文のデータをAIに送りたいので、なるべくここに文章を直接入力してください）</label>
+    <textarea name="form_input_text" id="form_input_text" placeholder="自由英作文の文章を直接入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; min-height: 100px;"></textarea>
+    </div>
+
+    <div class="submit-area">
+        <input type="submit" id="submit-btn" value="自由英作文を提出する">
+        <!-- ぐるぐるアニメーションを表示する隠しエリアを追加 -->
+        <div id="loading-spinner" style="display: none; margin-top: 10px;">
+            <div class="spinner"></div>
+            <p style="color: #666; font-size: 0.9rem;">AIがあなたの英作文を解析しています。しばらくお待ちください...</p>
+        </div>
+    </div>
+</form>
+
+<br>
+
+<h2>画像提出型の添削</h2>
+<form action="/essay_writing" method="post" enctype="multipart/form-data" id="upload-form">
+
+    <div>
+    <label for="title">⭐️提出する自由英作文の情報（どの大学の何年度？英検何級？など）</label>
+    </label>
+    <input type="text" name="title" id="title" placeholder="自由英作文の情報を入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+
+    <div>
+    <label for="question">⭐️自由英作文の問題内容（Should children stop using social media?など）</label>
+    </label>
+    <textarea name="question" id="question" placeholder="自由英作文の問題内容を入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; min-height: 50px;"></textarea>
+    </div>
+
+    <div>
+    <label for="essay_image">⭐️提出する自由英作文の画像（なるべく、上のフォームで英作文を入力して、ここは使わないようにしましょう）</label>
     <input type="file" name="essay_image" id="essay_image" accept="image/*">
     </div>
 

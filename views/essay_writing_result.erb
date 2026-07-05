@@ -1,0 +1,33 @@
+<div class="container">
+    <h1>📝 AI添削レポート</h1>
+
+    <div class="score-box">
+        <div>今回の英作文の完成度</div>
+        <div class="score"><%= @result["score"] %> / 100 点</div>
+    </div>
+
+    <div class="section-title">あなたの書いた英文（OCR読み取り結果）</div>
+    <div class="text-card"><%= @result["original_text"] %></div>
+
+    <div class="section-title">✨ おすすめの修正案</div>
+    <div class="text-card corrected"><%= @result["corrected_text"] %></div>
+
+    <div class="section-title">💡 講師からのアドバイス・講評</div>
+    <div class="text-card feedback"><%= @result["feedback"] %></div>
+
+    <div class="section-title">🔍 詳しい指摘箇所</div>
+    <% if @result["grammars"].empty? %>
+        <div class="text-card" style="border-left: 5px solid #2ecc71;">素晴らしい！文法的なミスは特に見当たりませんでした。</div>
+    <% else %>
+        <ul class="grammar-list">
+            <% @result["grammars"].each do |item| %>
+                <li class="grammar-item">
+                    <div class="mistake">❌ 重視・修正対象: 「<%= item["mistake"] %>」</div>
+                    <div class="reason"><%= item["reason"] %></div>
+                </li>
+            <% end %>
+        </ul>
+    <% end %>
+
+    <a href="/essay_writing_result" class="btn-back">もう一度英作文を提出する</a>
+</div>
