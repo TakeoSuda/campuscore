@@ -25,6 +25,12 @@
         <div class="icon">👥</div>
         <h3>面談記録を付ける</h3>
       </a>
+
+      <a href="/interview_reservations" class="nav-card">
+        <div class="icon">📆</div>
+        <h3>面談予約をする</h3>
+      </a>
+
       <a href="/instructions" class="nav-card">
         <div class="icon">📋</div>
         <h3>講師からの学習アドバイスを見る</h3>
@@ -47,7 +53,17 @@
         <div class="icon">📝</div>
         <h3>自由英作文の添削結果を見る</h3>
       </a>
-      
+
+      <a href="/english_to_japanese_translation" class="nav-card">
+        <div class="icon">🇺🇸→🇯🇵</div>
+        <h3>英文和訳を提出する</h3>
+      </a>
+
+      <a href="/my_translation_results" class="nav-card">
+        <div class="icon">🇺🇸→🇯🇵</div>
+        <h3>英文和訳の添削結果を見る</h3>
+      </a>
+
       <a href="/target_schools" class="nav-card">
         <div class="icon">🎓</div>
         <h3>志望校情報を確認する</h3>
@@ -103,6 +119,13 @@
         <h3>全ユーザーの自由英作文の添削結果</h3>
       </a>
       <% end %>    
+
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/users_translation_results" class="nav-card accent-card">
+        <div class="icon">🇺🇸→🇯🇵</div>
+        <h3>全ユーザーの英文和訳の添削結果</h3>
+      </a>
+      <% end %>
 
     <%# <a href="/chat_rooms" class="nav-card">
       <div class="icon">💬</div>

@@ -1,0 +1,50 @@
+<h1>英文和訳添削システム</h1>
+
+<form action="/english_to_japanese_translation" method="post" enctype="multipart/form-data" id="translation-form">
+
+    <div>
+    <label for="title">⭐️提出する英文和訳の情報（どの大学の何年度？など）</label>
+    </label>
+    <input type="text" name="title" id="title" placeholder="英文和訳の情報を入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+
+    <div>
+    <label for="question">⭐️和訳をする英文</label>
+    </label>
+    <textarea name="english_text" id="english_text" placeholder="英文和訳の文章を入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; min-height: 50px;"></textarea>
+    </div>
+
+    <div>
+    <label for="e_to_j_translation">⭐️和訳した文章</label>
+    <textarea name="e_to_j_translation" id="e_to_j_translation" placeholder="和訳を入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; min-height: 100px;"></textarea>
+    </div>
+
+    <div class="submit-area">
+        <input type="submit" id="translation-submit-btn" value="英文和訳を提出する">
+        <!-- ぐるぐるアニメーションを表示する隠しエリアを追加 -->
+        <div id="translation-loading-spinner" style="display: none; margin-top: 10px;">
+            <div class="spinner"></div>
+            <p style="color: #666; font-size: 0.9rem;">AIがあなたの英文和訳を解析しています。しばらくお待ちください...</p>
+        </div>
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const translationForm = document.getElementById('translation-form');
+  const translationBtn = document.getElementById('translation-submit-btn');
+  const translationLoadingSpinner = document.getElementById('translation-loading-spinner');
+
+  if (translationForm) {
+    translationForm.addEventListener('submit', () => {
+      // 1. ボタンを無効化して連打を防ぐ
+      translationBtn.disabled = true;
+      translationBtn.style.opacity = '0.5';
+      translationBtn.value = '送信中...';
+
+      // 2. ぐるぐるアニメーションとメッセージを表示
+      translationLoadingSpinner.style.display = 'block';
+    });
+  }
+});
+</script>

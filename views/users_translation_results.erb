@@ -1,0 +1,22 @@
+<h1>全ユーザーの英文和訳の添削結果</h1>
+
+<% @grouped_translations.each do |translation_id, translations| %>
+  <div>
+    <h2><%= translations.first['title'] %></h2>
+    <p><strong>ユーザー:</strong> <%= translations.first['user_name'] %></p>
+    <p><strong>英文:</strong> <%= translations.first['english_text'] %></p>
+    <p><strong>元の和訳:</strong> <%= translations.first['japanese_translation'] %></p>
+    <p><strong>修正後の和訳:</strong> <%= translations.first['corrected_text'] %></p>
+    <p><strong>スコア:</strong> <%= translations.first['score'] %></p>
+    <% translations.each do |translation| %>
+      <p><strong>ミス:</strong> <%= translation['mistake'] %></p>
+      <p><strong>理由:</strong> <%= translation['reason'] %></p>
+    <% end %>
+    <p><strong>フィードバック:</strong> <%= translations.first['feedback'] %></p>
+    <p><strong>講師からのアドバイス:</strong> <%= translations.first['human_feedback'] %></p>
+    <form action="/users_translation_results/<%= translation_id %>/feedback" method="post">
+      <textarea name="human_feedback" placeholder="フィードバックを入力" style="width: 100%; height: 100px;"></textarea>
+      <button type="submit">フィードバックを追加</button>
+    </form>
+  </div>
+<% end %>

@@ -1815,3 +1815,196 @@ get '/my_essay_results' do
   erb :my_essay_results
 end
 
+
+
+
+
+
+
+# ✒️英文和訳の答案自動採点機能
+# 英文和訳を入力する画面
+get '/english_to_japanese_translation' do
+  @user_id = session[:user_id]
+  erb :english_to_japanese_translation
+end
+
+# 画面から直接、和訳の文章を入力してAIに添削させる場合の処理
+post '/english_to_japanese_translation' do
+  @user_id = session[:user_id]
+  @title = params[:title]
+  
+  # 💡 最初にあらかじめ空の文字列を入れておき、スコープ（変数の有効範囲）の事故を防ぐ
+  e_to_j_translation = ""
+  e_to_j_translation = params[:e_to_j_translation] if params[:e_to_j_translation]
+  english_text = ""
+  english_text = params[:english_text] if params[:english_text]
+
+  # --------------------------------------------------
+  # 🚀【ここから新規追加】OpenAIによるAI添削処理
+  # --------------------------------------------------
+  
+  # 1. OpenAIクライアントの初期化（自動で ENV['OPENAI_API_KEY'] を読み込みます）
+  openai_client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
+
+  # 2. AIに「プロの英語教師」としての役割と、返却してほしいJSONの形（プロンプト）を指示する
+  system_prompt = <<~TEXT
+    あなたは親切で優秀な英語のプロ講師です。
+    ユーザーが書いた英文和訳の文章を添削し、必ず指定された以下のJSON形式でのみ返答してください。
+    挨拶や解説などの余計なテキストは一切含めず、純粋なJSONデータだけを返してください。
+    
+    {
+      "original_text": "元の文章",
+      "corrected_text": "文法や表現を綺麗に修正した後の完璧な文章",
+      "score": 100点満点中の点数(数値のみ),
+      "feedback": "全体的な講評や、もっと良くなるためのアドバイス（日本語）",
+      "mistakes": [
+        {"mistake_content": "文法的に間違っていた部分や意味的に間違っていた部分", "reason": "なぜ間違っているか、どう直すべきかの丁寧な解説（日本語）"}
+      ]
+    }
+  TEXT
+
+  begin
+    # 3. OpenAIのAPIへリクエストを送信
+    response = openai_client.chat(
+      parameters: {
+        model: "gpt-4o-mini", # コスパ最強＆爆速の最新モデル
+        response_format: { type: "json_object" }, # 確実にJSONで返してもらうための魔法の設定
+        messages: [
+          { role: "system", content: system_prompt },
+          { 
+            role: "user", 
+            # 💡 english_text と e_to_j_translation を分かりやすくドッキングさせて渡す
+            content: "【英文】\n#{english_text}\n\n【ユーザーが書いた和訳】\n#{e_to_j_translation}" 
+          }
+        ],
+        temperature: 0.3 # 回答のブレを抑え、安定した添削を行わせる設定
+      }
+    )
+
+    # 4. AIから返ってきたJSON形式の文字列を取り出す
+    ai_response_json = response.dig("choices", 0, "message", "content")
+    
+    # 5. JSON文字列をRubyのハッシュ（連想配列）に変換して、ビュー（ERB）に渡せるようにする
+    @result = JSON.parse(ai_response_json)
+
+    puts @result
+
+    # 6. AIによる添削結果をtranslationsテーブルとtranslation_mistakesテーブルに格納する。また、保存と同時に、生成されたばかりの id をその場で取得する。
+    translation_result = client.exec_params(
+      "INSERT INTO translations (user_id, title, english_text, japanese_translation, corrected_text, score, feedback) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+      [@user_id, @title, english_text, e_to_j_translation, @result["corrected_text"], @result["score"], @result["feedback"]]
+    )
+    # 配列（ハッシュの配列）として結果が返ってくるので、最初の1件の "id" を取り出す
+    translation_id = translation_result.first["id"].to_i
+
+    if @result["mistakes"] && @result["mistakes"].is_a?(Array)
+      @result["mistakes"].each do |mistake|
+        client.exec_params(
+          "INSERT INTO translation_mistakes (translation_id, mistake_content, reason) VALUES ($1, $2, $3)",
+          [translation_id, mistake["mistake_content"], mistake["reason"]]
+        )
+      end
+    end
+
+    # 7. 添削結果を表示する専用のERB画面（次に作ります）へ進む
+    erb :english_to_japanese_translation_result
+
+  rescue => e
+    # 万が一AI処理でエラーが起きた場合のセーフティ
+    puts "AI添削エラーが発生しました: #{e.message}"
+    @error_message = "AI添削中にエラーが発生しました。もう一度お試しいただくか、管理者にお問い合わせください。"
+    erb :english_to_japanese_translation # 必要に応じてエラー画面を用意（または既存のフォーム画面に戻すなど）
+  end
+
+end
+
+
+# 全ユーザーの英文和訳の答案と添削結果を一覧表示する画面
+get '/users_translation_results' do
+  # 管理者かどうかのチェック
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless current_user
+  redirect '/' unless current_user["is_admin"].to_s == 't'
+
+  raw_results = client.exec_params(
+    "SELECT t.id, t.english_text, t.title, t.japanese_translation,
+    t.corrected_text, t.score, t.feedback, u.name AS user_name, t.created_at, t.human_feedback,
+    tm.mistake, tm.reason
+     FROM translations t
+     JOIN users u ON t.user_id = u.id
+     JOIN translation_mistakes tm ON t.id = tm.translation_id
+     ORDER BY t.created_at DESC"
+  ).to_a
+
+  @grouped_translations = raw_results.group_by { |row| row["id"] }
+
+  puts @grouped_translations
+
+
+  erb :users_translation_results
+end
+
+# 全ユーザーの自由英作文の答案に対して、個別に人間の講師の添削メッセージを追加する画面
+post '/users_translation_results/:translation_id/feedback' do
+  translation_id = params[:translation_id]
+  human_feedback = params[:human_feedback]
+
+  # 管理者かどうかのチェック
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless current_user
+  redirect '/' unless current_user["is_admin"].to_s == 't'
+
+  # translationsテーブルのhuman_feedbackカラムを更新する
+  client.exec_params(
+    "UPDATE translations SET human_feedback = $1 WHERE id = $2",
+    [human_feedback, translation_id]
+  )
+
+  session[:success] = "添削メッセージを更新しました。"
+  redirect '/users_translation_results'
+end
+
+#　各ユーザーが自分の書いた英作文答案に対する、添削結果を確認する画面
+get '/my_translation_results' do
+  @user_id = session[:user_id]
+
+  @results = client.exec_params(
+    "SELECT t.id, t.english_text, t.title, t.japanese_translation, 
+    t.corrected_text, t.score, t.feedback, u.name AS user_name, t.created_at, t.human_feedback,
+    tm.mistake, tm.reason
+     FROM translations t
+     JOIN users u ON t.user_id = u.id
+     JOIN translation_mistakes tm ON t.id = tm.translation_id
+     WHERE u.id = $1
+     ORDER BY t.created_at DESC",
+    [@user_id]
+  ).to_a
+
+  @grouped_translations = @results.group_by { |row| row["id"] }
+
+  erb :my_translation_results
+end
+
+
+#面談予約機能
+get '/interview_reservations' do
+  @user_id = session[:user_id]
+  erb :interview_reservations
+end
+
+post '/interview_reservations' do
+  @user_id = session[:user_id]
+  interview_date = params[:interview_date]
+  interview_time = params[:interview_time]
+
+  # データベースに面談予約を保存
+  client.exec_params(
+    "INSERT INTO interview_reservations (user_id, interview_date, interview_time) VALUES ($1, $2, $3)",
+    [@user_id, interview_date, interview_time]
+  )
+
+  session[:success] = "面談予約を登録しました！"
+  redirect '/interview_reservations'
+end
+
+
