@@ -1,0 +1,24 @@
+<h1>面談スロット一括作成（改行区切り）</h1>
+<form action="/create_interview_slots" method="post">
+
+    <div>
+    <label for="campus">面談実施校舎</label>
+    <select name="campus" id="campus">
+        <option value="">-- 選択してください --</option>
+        <option value="おもろまち">おもろまち校</option>
+        <option value="泉崎">泉崎校</option>
+        <option value="首里">首里校</option>
+        <option value="沖縄">沖縄校</option>
+    </select>
+    </div>
+
+    <div>
+        <label for="interview_slot">面談スロット（1行に1枠ずつ入力してください）（例：2607071400-1420）</label>
+        <textarea name="interview_slot" id="interview_slot" rows="10" placeholder="2607071400-1420&#10;2607071430-1450&#10;2607071500-1520" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace;"></textarea>
+    </div>
+    <div class="submit-area" style="margin-top: 10px;">
+        <input type="submit" value="まとめて面談スロットを作成する">
+    </div>
+</form>
+
+

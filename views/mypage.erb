@@ -31,6 +31,11 @@
         <h3>面談予約をする</h3>
       </a>
 
+      <a href="/my_interview_reservations" class="nav-card">
+        <div class="icon">📋</div>
+        <h3>自分の面談予約一覧を見る</h3>
+      </a>
+
       <a href="/instructions" class="nav-card">
         <div class="icon">📋</div>
         <h3>講師からの学習アドバイスを見る</h3>
@@ -124,6 +129,20 @@
       <a href="/users_translation_results" class="nav-card accent-card">
         <div class="icon">🇺🇸→🇯🇵</div>
         <h3>全ユーザーの英文和訳の添削結果</h3>
+      </a>
+      <% end %>
+
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/create_interview_slots" class="nav-card accent-card">
+        <div class="icon">📅</div>
+        <h3>面談枠を作成する</h3>
+      </a>
+      <% end %>
+
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/admin_interview_reservations" class="nav-card accent-card">
+        <div class="icon">📋</div>
+        <h3>全ユーザーの面談予約状況</h3>
       </a>
       <% end %>
 

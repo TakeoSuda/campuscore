@@ -1987,24 +1987,140 @@ end
 
 
 #面談予約機能
+#面談枠作成画面
+get '/create_interview_slots' do
+  @user_id = session[:user_id]
+
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  halt 404 unless current_user
+  if current_user["is_admin"].to_s != 't'
+    redirect '/'
+  end
+
+  erb :create_interview_slots
+end
+
+# 面談枠作成処理
+post '/create_interview_slots' do
+  @user_id = session[:user_id]
+  campus = params[:campus]
+
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  halt 404 unless current_user
+  if current_user["is_admin"].to_s != 't'
+    redirect '/'
+  end
+
+interview_slots = params[:interview_slot].split("\n").map(&:strip).reject(&:empty?)
+
+  # 面談枠をデータベースに保存
+  client.transaction do |conn|
+    interview_slots.each do |slot|
+      conn.exec_params(
+        "INSERT INTO interview_slots (interview_slot, campus) VALUES ($1, $2)
+        ON CONFLICT ON CONSTRAINT unique_interview_slot DO NOTHING",
+        [slot, campus]
+      )
+    end
+  end
+
+  session[:success] = "面談枠を作成しました。"
+  redirect '/create_interview_slots'
+end
+
+
+# 面談予約画面
 get '/interview_reservations' do
   @user_id = session[:user_id]
+
+  # 面談枠をデータベースから取得（予約済みのものは除外）
+  @available_slots = client.exec_params(
+    "SELECT * FROM interview_slots WHERE user_id IS NULL ORDER BY id ASC"
+  ).to_a
+
+  @grouped_slots = @available_slots.group_by { |slot| slot["campus"] }
+
   erb :interview_reservations
 end
 
+# 面談予約処理
 post '/interview_reservations' do
   @user_id = session[:user_id]
-  interview_date = params[:interview_date]
-  interview_time = params[:interview_time]
+  slot_id = params[:id]
 
-  # データベースに面談予約を保存
-  client.exec_params(
-    "INSERT INTO interview_reservations (user_id, interview_date, interview_time) VALUES ($1, $2, $3)",
-    [@user_id, interview_date, interview_time]
+  # 面談枠を予約（user_idを更新）
+  result = client.exec_params(
+    "UPDATE interview_slots SET user_id = $1 WHERE id = $2 AND user_id IS NULL",
+    [@user_id, slot_id]
   )
 
-  session[:success] = "面談予約を登録しました！"
+  if result.cmd_tuples > 0
+    session[:success] = "面談を予約しました。"
+  else
+    session[:error] = "面談の予約に失敗しました。すでに予約されている可能性があります。"
+  end
+
   redirect '/interview_reservations'
 end
+
+
+# 各ユーザーが自分の面談予約状況を確認する画面
+get '/my_interview_reservations' do
+  @user_id = session[:user_id]
+
+  # 自分の面談予約状況を取得
+  @my_reservations = client.exec_params(
+    "SELECT * FROM interview_slots WHERE user_id = $1 ORDER BY id ASC",
+    [@user_id]
+  ).to_a
+
+  erb :my_interview_reservations
+end
+
+# 予約キャンセル処理
+post '/interview_reservations/cancel' do
+  @user_id = session[:user_id]
+  slot_id = params[:id]
+
+  # 面談枠の予約をキャンセル（user_idをNULLに更新）
+  result = client.exec_params(
+    "UPDATE interview_slots SET user_id = NULL WHERE id = $1 AND user_id = $2",
+    [slot_id, @user_id]
+  )
+
+  if result.cmd_tuples > 0
+    session[:success] = "面談の予約をキャンセルしました。"
+  else
+    session[:error] = "面談の予約キャンセルに失敗しました。"
+  end
+
+  redirect '/interview_reservations'
+end
+
+
+# 管理者が全ユーザーの面談予約状況を確認する画面
+get '/admin_interview_reservations' do
+  @user_id = session[:user_id]
+
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  halt 404 unless current_user
+  if current_user["is_admin"].to_s != 't'
+    redirect '/'
+  end
+
+  # 全ユーザーの面談予約状況を取得
+  @all_reservations = client.exec_params(
+    "SELECT slots.id, slots.interview_slot, slots.campus, u.name AS user_name
+     FROM interview_slots slots
+     LEFT JOIN users u ON slots.user_id = u.id
+     ORDER BY slots.id ASC"
+  ).to_a
+
+  @grouped_reservations = @all_reservations.group_by { |slot| slot["campus"] }
+
+  erb :admin_interview_reservations
+end
+
+
 
 

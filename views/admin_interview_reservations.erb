@@ -1,0 +1,12 @@
+<h1>面談予約一覧</h1>
+    <% @grouped_reservations.each do |campus, slots| %>
+        <div>
+            <h2><%= campus %>校</h2>
+            <% slots.each do |slot| %>
+                <div>
+                    <p><%= slot["interview_slot"] %>：<%= slot["user_name"] || "予約なし" %></p>
+                </div>
+            <% end %>
+        </div>
+    <% end %>
+

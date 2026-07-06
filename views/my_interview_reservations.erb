@@ -1,0 +1,12 @@
+<h1>自分の面談予約一覧</h1>
+<% @my_reservations.each do |slot| %>
+  <div>
+    <span><%= slot["interview_slot"] %></span>
+    <form action="/interview_reservations/cancel" method="post" style="display: inline;">
+      <input type="hidden" name="id" value="<%= slot["id"] %>">
+      <input type="submit" value="キャンセルする">
+    </form>
+  </div>
+<% end %>
+
+

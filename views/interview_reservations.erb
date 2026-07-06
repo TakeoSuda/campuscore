@@ -1,17 +1,22 @@
 <h1>面談予約</h1>
 <form action="/interview_reservations" method="post">
-    <div>
-        <label for="interview_date">面談希望日</label>
-        <input type="date" name="interview_date" id="interview_date" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;">
-    </div>
-    
-    <div>
-        <label for="interview_time">面談希望時間</label>
-        <input type="time" name="interview_time" id="interview_time" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;">
-    </div>
-    
-    <div class="submit-area">
-        <input type="submit" value="面談予約を提出する">
+    <% @grouped_slots.each do |campus, slots| %>
+        <div>
+            <h2><%= campus %>校</h2>
+            <% slots.each do |slot| %>
+                <div>
+                    <input type="radio" name="id" value="<%= slot["id"] %>">
+                    <label><%= slot["interview_slot"] %></label>
+                </div>
+            <% end %>
+
+        </div>
+    <% end %>
+
+    <div class="submit-area" style="margin-top: 10px;">
+        <input type="submit" value="面談予約をする">
     </div>
 </form>
+
+
 
