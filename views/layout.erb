@@ -19,12 +19,23 @@
         </h1>
     </div>
 
+<style>
+  /* スマホ用のスタイル（768px以下で非表示） */
+  @media (max-width: 768px) {
+      .welcome-text {
+      display: none;
+    }
+  }
+</style>
+
     <% if session[:user_name] %>
       <div class="header-welcome" style="display: flex; align-items: center; gap: 10px;">
-        <div style="font-size: 15px;"><%= session[:user_name] %>さん、こんにちは！</div>
+        <div class="welcome-text" style="font-size: 15px;"><%= session[:user_name] %>さん、こんにちは！</div>
         <div><img src="<%= @current_user['avatar'] %>" alt="Avatar" style="max-width: 50px; max-height: 50px; border-radius: 50%;" /></div>
       </div>
     <% end %>
+    
+
 
 
         <!-- PC用メニュー -->
