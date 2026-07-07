@@ -76,6 +76,16 @@ before do
   end
 end
 
+before do
+  if session[:user_id]
+    result = client.exec_params(
+      "SELECT avatar FROM users WHERE id = $1 LIMIT 1",
+      [session[:user_id]]
+    )
+    @current_user = result.first
+  end
+end
+
 # ReactからのPOSTリクエストを受け取る窓口
 post '/api/quiz_results' do
   # 1. データの受信設定

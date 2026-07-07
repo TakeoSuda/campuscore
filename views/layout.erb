@@ -12,7 +12,7 @@
     <header class="header">
 
     <div class="logo">
-        <h1>
+        <h1 style="font-size: 36px;">
             <a href="<%= session[:user_id] ? '/mypage' : '/' %>" style="text-decoration: none; color: #1111d4;">
             CampusCore
             </a>
@@ -20,8 +20,9 @@
     </div>
 
     <% if session[:user_name] %>
-      <div class="header-welcome">
-        <%= session[:user_name] %>さん、こんにちは！
+      <div class="header-welcome" style="display: flex; align-items: center; gap: 10px;">
+        <div style="font-size: 15px;"><%= session[:user_name] %>さん、こんにちは！</div>
+        <div><img src="<%= @current_user['avatar'] %>" alt="Avatar" style="max-width: 50px; max-height: 50px; border-radius: 50%;" /></div>
       </div>
     <% end %>
 
@@ -37,7 +38,6 @@
           <a href="/diary">勉強日記</a>
           <a href="/consults">面談記録</a>
           <a href="/recommends">おすすめ参考書</a>
-          <a href="/recommends_list">優良参考書一覧</a>
           <a href="/logout">ログアウト</a>
           <% end %>
         </nav>
