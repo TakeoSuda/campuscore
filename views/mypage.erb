@@ -1,5 +1,30 @@
 <div class="mypage-container">
-  
+
+<section class="announcement-section" style="
+  background-color: rgba(59, 130, 246, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+">
+
+  <h2 style="margin: 0; color: #1e3a8a;">
+    <span style="margin-right: 10px; color: #3b82f6;">
+      📢 講師からのお知らせ
+    </span>
+  </h2>
+
+  <% @teacher_announcements.each do |a| %>
+    <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 8px;">
+      <h3 style="margin:0; color: #1e3a8a;">
+        <%= a["title"] %>
+      </h3>
+      <p style="margin: 6px 0 0; color: #475569;">
+        <%= a["content"] %>
+      </p>
+    </div>
+  <% end %>
+
+</section>
   <section class="action-grid">
     <a href="/plan_new" class="nav-card">
       <div class="icon">📅</div>
@@ -29,11 +54,6 @@
       <a href="/interview_reservations" class="nav-card">
         <div class="icon">📆</div>
         <h3>面談予約をする</h3>
-      </a>
-
-      <a href="/my_interview_reservations" class="nav-card">
-        <div class="icon">📋</div>
-        <h3>自分の面談予約一覧を見る</h3>
       </a>
 
       <a href="/instructions" class="nav-card">
@@ -143,6 +163,13 @@
       <a href="/admin_interview_reservations" class="nav-card accent-card">
         <div class="icon">📋</div>
         <h3>全ユーザーの面談予約状況</h3>
+      </a>
+      <% end %>
+
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/create_teacher_announcement" class="nav-card accent-card">
+        <div class="icon">📢</div>
+        <h3>講師からのお知らせを登録</h3>
       </a>
       <% end %>
 

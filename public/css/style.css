@@ -198,6 +198,60 @@ span.badge {
   margin: 0 auto;
 }
 
+/* 講師からのお知らせ */
+.announcement-section {
+  margin-bottom: 2.5rem;
+}
+
+.announcement-title {
+  margin: 0 0 1rem;
+}
+
+.announcement-badge {
+  display: inline-block;
+  background: linear-gradient(90deg, #ff5f6d, #ffc371);
+  color: #fff;
+  font-weight: bold;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(255, 95, 109, 0.35);
+}
+
+.announcement-card {
+  background: #fff8e1;
+  border: 2px solid #ffb300;
+  border-left: 8px solid #ff5f6d;
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 14px rgba(255, 179, 0, 0.2);
+}
+
+.announcement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.announcement-header h3 {
+  margin: 0;
+  color: var(--h3-main);
+}
+
+.announcement-date {
+  font-size: 0.85rem;
+  color: var(--text-gray);
+}
+
+.announcement-content {
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+  color: var(--text-main);
+}
+
 /* ナビゲーションカードのグリッド */
 .action-grid {
   display: grid;

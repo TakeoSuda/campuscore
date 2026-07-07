@@ -1,0 +1,27 @@
+<h1>講師からのお知らせ登録画面</h1>
+<form action="/create_teacher_announcement" method="post">
+  <div>
+    <label for="title" style="display: block; margin-bottom: 5px;">タイトル:</label>
+    <input type="text" id="title" name="title" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+  </div>
+
+  <div>
+    <label for="content" style="display: block; margin-bottom: 5px;">内容:</label>
+    <textarea id="content" name="content" rows="5" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+  </div>
+
+  <div class="submit-area">
+    <input type="submit" value="お知らせを登録する">
+  </div>
+</form>
+
+<h2>既存のお知らせ一覧</h2>
+<ul>
+  <% @announcements.each do |announcement| %>
+    <li>
+      <h3><%= announcement["title"] %></h3>
+      <p><%= announcement["content"] %></p>
+    </li>
+  <% end %>
+</ul>
+

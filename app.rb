@@ -302,6 +302,11 @@ get '/mypage' do
 # ここで @is_admin に真偽値を振っておくと、erbで使いやすくなる
   @is_admin = (@user['is_admin'] == 't' || @user['is_admin'] == true)
 
+  # 講師からのお知らせを新着順に取得
+  @teacher_announcements = client.exec_params(
+    "SELECT * FROM teacher_announcements ORDER BY created_at DESC LIMIT 5"
+  ).to_a
+
   erb :mypage
 end
 
@@ -2040,6 +2045,13 @@ get '/interview_reservations' do
 
   @grouped_slots = @available_slots.group_by { |slot| slot["campus"] }
 
+  # 自分の面談予約状況を取得
+  @my_reservations = client.exec_params(
+    "SELECT * FROM interview_slots WHERE user_id = $1 ORDER BY id ASC",
+    [@user_id]
+  ).to_a
+
+
   erb :interview_reservations
 end
 
@@ -2061,20 +2073,6 @@ post '/interview_reservations' do
   end
 
   redirect '/interview_reservations'
-end
-
-
-# 各ユーザーが自分の面談予約状況を確認する画面
-get '/my_interview_reservations' do
-  @user_id = session[:user_id]
-
-  # 自分の面談予約状況を取得
-  @my_reservations = client.exec_params(
-    "SELECT * FROM interview_slots WHERE user_id = $1 ORDER BY id ASC",
-    [@user_id]
-  ).to_a
-
-  erb :my_interview_reservations
 end
 
 # 予約キャンセル処理
@@ -2120,6 +2118,47 @@ get '/admin_interview_reservations' do
 
   erb :admin_interview_reservations
 end
+
+
+# 講師からのお知らせを登録する画面
+get '/create_teacher_announcement' do
+  @user_id = session[:user_id]
+
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  halt 404 unless current_user
+  if current_user["is_admin"].to_s != 't'
+    redirect '/'
+  end
+
+  @announcements = client.exec_params(
+    "SELECT * FROM teacher_announcements ORDER BY created_at DESC"
+  ).to_a
+
+  erb :create_teacher_announcement
+end
+
+# 講師からのお知らせを登録する処理
+post '/create_teacher_announcement' do
+  @user_id = session[:user_id]
+  title = params[:title]
+  content = params[:content]
+
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  halt 404 unless current_user
+  if current_user["is_admin"].to_s != 't'
+    redirect '/'
+  end
+
+  # お知らせをデータベースに保存
+  client.exec_params(
+    "INSERT INTO teacher_announcements (title, content, user_id) VALUES ($1, $2, $3)",
+    [title, content, @user_id]
+  )
+
+  session[:success] = "お知らせを登録しました。"
+  redirect '/create_teacher_announcement'
+end
+
 
 
 
