@@ -2089,9 +2089,9 @@ post '/interview_reservations/cancel' do
   )
 
   if result.cmd_tuples > 0
-    session[:success] = "面談の予約をキャンセルしました。"
+    session[:cancel_success] = "面談の予約をキャンセルしました。"
   else
-    session[:error] = "面談の予約キャンセルに失敗しました。"
+    session[:cancel_error] = "面談の予約キャンセルに失敗しました。"
   end
 
   redirect '/interview_reservations'
