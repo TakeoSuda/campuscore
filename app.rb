@@ -704,9 +704,6 @@ post '/password_reset' do
   email = params[:email]
   user = client.exec_params("SELECT * FROM users WHERE email = $1", [email]).first
 
-  p params
-  p user
-
   if user
     # 1. 使い捨てのランダムな「鍵（トークン）」を作る
     reset_token = SecureRandom.hex(32)
@@ -721,25 +718,34 @@ post '/password_reset' do
     # 環境変数 APP_URL があればそれを使い、なければローカル用を使う
     base_url = ENV['APP_URL'] || "http://localhost:10000"
     url = "#{base_url}/password_reset/edit?token=#{reset_token}"
-    Pony.mail(
-    to: user['email'],
-    from: ENV['SMTP_USER'],     # 送信元（自分のアドレス）
-    subject: "【CampusCore】パスワード再設定",
-    body: "以下のURLをクリックして、1時間以内に再設定を完了してください。\n\n#{url}",
-    via: :smtp,
-    via_options: {
-      address:              'smtp.gmail.com',
-      port:                 '587',
-      enable_starttls_auto: true,
-      user_name:            ENV['SMTP_USER'],     # 環境変数から読み込む
-      password:             ENV['SMTP_PASSWORD'], # 環境変数から読み込む
-      authentication:       :plain,
-      domain:               "localhost.localdomain"
-    })
-    @message = "ご登録のメールアドレスに再設定用のリンクを送信しました。"
+
+    begin
+        Pony.mail(
+        to: user['email'],
+        from: ENV['SMTP_USER'],     # 送信元（自分のアドレス）
+        subject: "【CampusCore】パスワード再設定",
+        body: "以下のURLをクリックして、1時間以内に再設定を完了してください。\n\n#{url}",
+        via: :smtp,
+        via_options: {
+          address:              'smtp.gmail.com',
+          port:                 '587',
+          enable_starttls_auto: true,
+          user_name:            ENV['SMTP_USER'],     # 環境変数から読み込む
+          password:             ENV['SMTP_PASSWORD'], # 環境変数から読み込む
+          authentication:       :plain,
+          domain:               "localhost.localdomain"
+        })
+        @message = "ご登録のメールアドレスに再設定用のリンクを送信しました。メールボックスをご確認ください。"
+    rescue => e
+        # ❌ 相手の容量不足（452エラー）などで送信に失敗した場合、ここに飛ぶ！
+        # サーバーのログにエラー内容を出力して、無限リトライをここでストップさせる
+        puts "=== [警告] メール送信エラーが発生しました ==="
+        puts e.message
+        puts "==========================================="
+        @error = "メール送信に失敗しました: #{e.message}"
+    end
   else
-    # セキュリティ上、アドレスが存在するかどうかを教えない場合もあります
-    @message = "入力された内容を確認してください"
+    @error = "そのメールアドレスは登録されていません。メールアドレスが正しいか確認してください。"
   end
   erb :password_reset
 end
