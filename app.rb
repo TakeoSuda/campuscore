@@ -366,6 +366,18 @@ else
 end
 
   @campus = params[:campus]
+
+  # 💡 サーバー側での厳重チェック（空っぽ、または選択肢にない不正な文字列の場合）
+  # ※許可するキャンパス名は、DBの制約に合わせて書き換える
+  allowed_campuses = ["おもろまち", "泉崎", "首里", "沖縄"]
+
+  if @campus.nil? || !allowed_campuses.include?(@campus.strip)
+    # ❌ 不正なデータなので、エラーメッセージを持って登録画面に戻す
+    session[:error] = "正しいキャンパスを選択してください。"
+    redirect '/mypage_edit'
+    # ここで処理を終了させることで、下の DB保存(exec_params) に進ませない！
+  end
+
   @school = params[:school]
   @grade = params[:grade]
   @desired_school = params[:desired_school]

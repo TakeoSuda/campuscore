@@ -19,7 +19,7 @@
 
     <div>
     <label for="campus">即解ゼミの所属校舎名</label>
-    <select name="campus" id="campus">
+    <select name="campus" id="campus" required>
         <option value="">-- 選択してください --</option>
         <option value="おもろまち" <%= "selected" if @user["campus"] == "おもろまち" %>>おもろまち校</option>
         <option value="泉崎" <%= "selected" if @user["campus"] == "泉崎" %>>泉崎校</option>
@@ -27,10 +27,10 @@
         <option value="沖縄" <%= "selected" if @user["campus"] == "沖縄" %>>沖縄校</option>
     </select>
     </div>
-
+    
     <div>
     <label for="school">学校名</label>
-    <input type="text" name="school" placeholder="学校名" value="<%= @user["school"] %>">
+    <input type="text" name="school" placeholder="学校名" value="<%= @user["school"] %>" required>
     </div>
 
     <div>
