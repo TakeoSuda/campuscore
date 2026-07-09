@@ -1176,11 +1176,24 @@ get '/admin/create-test' do
   # セッションからメッセージを取り出して、表示したら消す（一度きりの表示にするため）
   @success_message = session[:success]
   session[:success] = nil
+  @selected_category = params[:category_filter]
+
+  #　カテゴリー（分野）一覧を取得する
+  categories = client.exec_params("SELECT category_ja FROM test_categories;")
+  @categories = categories.map { |row| row['category_ja'] }
 
   # 全ての問題をデータベースから取得
-  @questions = client.exec_params(
-    "SELECT id, category, question_text FROM english_questions ORDER BY category, id ASC"
-  ).to_a
+  if @selected_category.nil? || @selected_category.empty?
+    @questions = client.exec_params(
+      "SELECT id, category, question_text FROM english_questions ORDER BY category, id ASC"
+    ).to_a
+  else
+    @category_en_result = client.exec_params("SELECT category_en FROM test_categories WHERE category_ja = $1", [@selected_category]).first
+    @questions = client.exec_params(
+      "SELECT id, category, question_text FROM english_questions WHERE category = $1 ORDER BY id ASC",
+      [@category_en_result['category_en']]
+    ).to_a
+  end
 
   erb :admin_create_test
 end
@@ -1192,6 +1205,10 @@ post '/admin/save-test' do
 
   if selected_ids.nil? || selected_ids.empty?
     @error = "問題が選択されていません。最低1問以上選択してください。"
+    # erbに必要な変数を全て設定する
+    @selected_category = params[:category_filter]
+    categories = client.exec_params("SELECT category_ja FROM test_categories;")
+    @categories = categories.map { |row| row['category_ja'] }
     @questions = client.exec_params("SELECT id, category, question_text FROM english_questions ORDER BY category, id ASC").to_a
     return erb :admin_create_test
   end

@@ -18,6 +18,19 @@
     <div style="color: red; font-weight: bold; margin-bottom: 15px;"><%= @error %></div>
   <% end %>
 
+
+<%# 単元絞り込み専用フォーム（GETで送信） %>
+  <form action="/admin/create-test" method="GET" style="margin-bottom: 20px; display: flex; align-items: center;">
+    <label for="category_filter" style="font-weight: bold; margin-right: 10px;">単元で絞り込む:</label>
+    <select name="category_filter" onchange="this.form.submit()" style="padding: 5px;">
+      <option value="" >すべて</option>
+      <% @categories.each do |c| %>
+        <option value="<%= c %>" <%= "selected" if @selected_category == c %>><%= c %></option>
+      <% end %>
+    </select>
+  </form>
+
+<%# 問題選択フォーム %>
   <form action="/admin/save-test" method="POST">
     <div style="margin-bottom: 20px;">
       <label style="font-weight: bold;">テスト名: </label>
