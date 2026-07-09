@@ -117,7 +117,14 @@
         <h3>英語テスト作成</h3>
       </a>
       <% end %>
-     
+
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/created_tests" class="nav-card accent-card">
+        <div class="icon">📂</div>
+        <h3>作成済みテスト一覧</h3>
+      </a>
+      <% end %>
+
       <% if @is_admin == true || @is_admin == 't' %>
       <a href="/users_quiz_result" class="nav-card accent-card">
         <div class="icon">📁</div>

@@ -1,0 +1,6 @@
+<h1>これまでに作成したテスト一覧</h1>
+<% @tests.each_with_index do |t, index| %>
+<p><%= index + 1 %>. 『<%= t["name"] %>』</p>
+<a href="/english_test/<%= t["id"] %>">詳細</a>
+<% end %>
+

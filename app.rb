@@ -1356,6 +1356,20 @@ get '/question_stats_by_category' do
   erb :question_stats_by_category
 end
 
+# これまでに作成したテストの一覧を表示する画面
+get '/created_tests' do
+  user_id = session[:user_id]
+
+  # 管理者かどうかのチェック
+  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [user_id]).first
+  halt 404 unless current_user
+  redirect '/' unless current_user["is_admin"].to_s == 't'
+
+  @tests = client.exec_params("SELECT * FROM tests ORDER BY created_at DESC").to_a
+
+  erb :created_tests
+end
+
 # パスナビのサイトからのデータ取得
 class PassNaviScraper
   def self.fetch_deviation(univ_id, department_name)
