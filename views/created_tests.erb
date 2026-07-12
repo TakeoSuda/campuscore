@@ -1,6 +1,19 @@
-<h1>これまでに作成したテスト一覧</h1>
-<% @tests.each_with_index do |t, index| %>
-<p><%= index + 1 %>. 『<%= t["name"] %>』</p>
-<a href="/english_test/<%= t["id"] %>">詳細</a>
+<% if session[:notice] %>
+  <div style="background-color: #e6f4ea; color: #137333; padding: 12px 20px; margin: 15px 0; border-left: 5px solid #1e8e3e; border-radius: 4px; font-weight: bold;"><%= session.delete(:notice) %></div>
 <% end %>
+
+<h1>これまでに作成したテスト一覧</h1>
+<form action="/add_to_list" method="post">
+
+<% @tests.each_with_index do |t, index| %>
+<p>
+<input type="checkbox" name="is_added_to_list[]" value="<%= t["id"] %>" 
+<%= 'checked' if t["is_added_to_list"] == true || t["is_added_to_list"] == "t" %>>
+<span><%= index + 1 %>. 『<%= t["name"] %>』</span>
+<a href="/english_test/<%= t["id"] %>">詳細</a>
+</p>
+<% end %>
+    <button type="submit" style="padding: 5px 15px; margin-top: 10px;">選択したテストを出題リストに追加</button>
+
+</form>
 

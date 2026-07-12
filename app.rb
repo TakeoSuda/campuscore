@@ -1048,12 +1048,16 @@ end
 post '/quiz/submit' do
   user_id = session[:user_id]
   user_answers = params["answers"]
-  @correct_count = 0  # 正解数を数えるカウンター
+  session[:correct_count] = 0  # 正解数を数えるカウンター
+  session[:total_count] = 0 # 合計回答数を数えるカウンター
+
+  current_time = Time.now
 
   if user_answers
     user_answers.each do |_index, data|
       question_id = data["id"].to_i
       chosen_option = data["chosen"].to_i
+      session[:total_count] += 1
 
       # 1. データベースから、その問題の正解を取得する
       question = client.exec_params(
@@ -1065,14 +1069,14 @@ post '/quiz/submit' do
       is_correct = false
       if question && question["correct_option"].to_i == chosen_option
         is_correct = true
-        @correct_count += 1  # 正解だったらカウントを増やす
+        session[:correct_count] += 1  # 正解だったらカウントを増やす
       end
 
       # 3. 「誰が」「どの問題に」「何と答え」「正解したか」を1回でインサートする
       client.exec_params(
         "INSERT INTO answer_logs (user_id, question_id, selected_option, is_correct, answered_at) 
-         VALUES ($1, $2, $3, $4, NOW())",
-        [user_id, question_id, chosen_option, is_correct]
+         VALUES ($1, $2, $3, $4, $5)",
+        [user_id, question_id, chosen_option, is_correct, current_time]
       )
     end
   end
@@ -1083,28 +1087,52 @@ end
 get '/quiz_result' do
   user_id = session[:user_id]
   test_id = session[:test_id] # もしテストIDを渡す場合はここで受け取る
+  @correct_count = session[:correct_count].to_i
+  @total_count = session[:total_count].to_i
+  @test_name = session[:test_name]
+  @wrong_count = @total_count - @correct_count
+
+  # 💡 対策: このテストで、このユーザーが「最後に回答した日時」を1件特定する
+  # これによって、過去の同じテストの回答ログが混ざるのを防ぎます
+  last_attempt = client.exec_params(
+    "SELECT answered_at FROM answer_logs 
+     WHERE user_id = $1 AND test_id = $2 
+     ORDER BY answered_at DESC LIMIT 1",
+    [user_id, test_id]
+  ).first
+
+  if last_attempt
+    # 最新の受験日時をセット（ミリ秒のズレを防ぐため、安全に文字列やそのまま利用）
+    last_time = last_attempt["answered_at"]
+  end
 
   @correct_answers = client.exec_params(
-    "SELECT q.id, q.question_text, q.correct_option, al.selected_option, al.answered_at 
+    "SELECT q.id, q.question_text, q.option_1, q.option_2, q.option_2, q.option_3, q.option_4, q.correct_option, al.selected_option, al.answered_at 
      FROM answer_logs al
      JOIN english_questions q ON al.question_id = q.id
-     WHERE al.user_id = $1 AND al.is_correct = true AND al.test_id = $2
-     ORDER BY al.answered_at DESC",
-    [user_id, test_id]
+     WHERE al.user_id = $1 AND al.is_correct = true AND al.test_id = $2 AND al.answered_at = $3
+     ORDER BY al.answered_at DESC
+    LIMIT $4",
+    [user_id, test_id, last_time, @correct_count]
   ).to_a
 
   @wrong_answers = client.exec_params(
-    "SELECT q.id, q.question_text, q.correct_option, al.selected_option, al.answered_at 
+    "SELECT q.id, q.question_text, q.option_1, q.option_2, q.option_2, q.option_3, q.option_4, q.correct_option, al.selected_option, al.answered_at 
      FROM answer_logs al
      JOIN english_questions q ON al.question_id = q.id
-     WHERE al.user_id = $1 AND al.is_correct = false AND al.test_id = $2
-     ORDER BY al.answered_at DESC",
-    [user_id, test_id]
+     WHERE al.user_id = $1 AND al.is_correct = false AND al.test_id = $2 AND al.answered_at = $3
+     ORDER BY al.answered_at DESC
+     LIMIT $4",
+    [user_id, test_id, last_time, @wrong_count]
   ).to_a
   
-  @total_count = @correct_answers.length + @wrong_answers.length
+  @accuracy_rate = @total_count > 0 ? (@correct_count.to_f / @total_count * 100).round(2) : 0
 
-  @accuracy_rate = @total_count > 0 ? (@correct_answers.length.to_f / @total_count * 100).round(2) : 0
+  # 💡 使い終わったセッションは消去（リロード対策）
+  session[:test_id] = nil
+  session[:test_name] = nil
+  session[:correct_count] = nil
+  session[:total_count] = nil
 
   erb :quiz_result
 end
@@ -1216,7 +1244,7 @@ post '/admin/save-test' do
   test_name = params[:test_name]
   test_id = client.exec_params("INSERT INTO tests (name) VALUES ($1) RETURNING id", [test_name])[0]["id"]
   selected_ids.each do |q_id|
-  client.exec_params("INSERT INTO test_questions (test_id, question_id) VALUES ($1, $2)", [test_id, q_id])
+    client.exec_params("INSERT INTO test_questions (test_id, question_id) VALUES ($1, $2)", [test_id, q_id])
   end
 
   # ✅ ここで、セッションにメッセージを代入する
@@ -1369,6 +1397,127 @@ get '/created_tests' do
 
   erb :created_tests
 end
+
+# これまでに作成したテストの一覧から、出題するテストを選択する画面
+post '/add_to_list' do
+  # 1. チェックされたテストのID配列を取得する (例: ["3", "5", "12"])
+  checkbox_params = params[:is_added_to_list] || [] # チェックされていない場合は空配列を代入
+  selected_ids = checkbox_params.map(&:to_i)
+
+  all_ids = client.exec_params(
+    "SELECT id FROM tests"
+  ).map{ |row| row['id'].to_i }
+
+  unselected_ids = all_ids - selected_ids
+
+  # p selected_ids # ➔ ターミナルでどんな配列が届いているか確認できる
+
+  # 2. 配列の中身をループ処理して、データベースを1件ずつ TRUE に更新する
+  selected_ids.each do |test_id|
+    client.exec_params(
+      "UPDATE tests SET is_added_to_list = TRUE WHERE id = $1;",
+      [test_id]
+    )
+  end
+
+  # 3. 配列の中身をループ処理して、選択されていないテストを1件ずつ FALSE に更新する
+  unselected_ids.each do |test_id|
+    client.exec_params(
+      "UPDATE tests SET is_added_to_list = FALSE WHERE id = $1;",
+      [test_id]
+    )
+  end
+
+  # 4. 処理が終わったらメッセージをセットして元のページに戻る
+  session[:notice] = "#{selected_ids.length}件のテストを出題リストに追加しました！"
+  redirect '/created_tests'
+end
+
+
+# 出題リストに追加されたテストを受験する画面
+get '/listed_tests' do
+  user_id = session[:user_id]
+
+  @tests = client.exec_params(
+    "SELECT tests.id AS test_id, tests.name AS test_name, tests.created_at AS created_at, test_questions.question_id AS question_id, english_questions.question_text AS question_text,
+    english_questions.option_1 AS option_1, english_questions.option_2 AS option_2, english_questions.option_3 AS option_3, english_questions.option_4 AS option_4, english_questions.correct_option AS correct_option
+    FROM tests
+    JOIN test_questions ON tests.id = test_questions.test_id
+    JOIN english_questions ON test_questions.question_id = english_questions.id
+    WHERE tests.is_added_to_list = TRUE"
+  )
+
+  @test_questions = {}
+
+  @tests.each do | row |
+    test_id = row['test_id']
+
+    unless @test_questions[test_id]
+      @test_questions[test_id] = {
+        test_name: row['test_name'],
+        questions: []
+      }
+    end
+
+    @test_questions[test_id][:questions] << {
+      question_id: row['question_id'],
+      question_text: row['question_text'],
+      option_1: row['option_1'],
+      option_2: row['option_2'],
+      option_3: row['option_3'],
+      option_4: row['option_4'],
+      correct_option: row['correct_option']
+    }
+  end
+
+  erb :listed_tests
+end
+
+# テストを受験し、回答を送信する画面
+post '/listed_tests/submit' do
+  user_id = session[:user_id]
+  test_id = params["test_id"]
+  user_answers = params["answers"]
+
+  test_name = client.exec_params(
+    "select name from tests where id = $1", [test_id]
+  ).first
+
+  session[:test_name] = test_name["name"]
+
+  session[:correct_count] = 0
+  session[:total_count] = 0
+
+  # answer_logsテーブルに登録するanswered_atの時間を統一する
+  current_time = Time.now
+
+  if user_answers
+    user_answers.each do | question_id, answer |
+
+      session[:total_count] += 1
+
+      correct_answer = client.exec_params(
+        "select correct_option from english_questions where id = $1", [question_id.to_i]
+      ).first["correct_option"].to_i
+
+      is_correct = false
+      if correct_answer == answer.to_i
+        is_correct = true
+        session[:correct_count] += 1
+      end
+      
+      client.exec_params(
+        "INSERT INTO answer_logs (user_id, question_id, selected_option, is_correct, answered_at, test_id) 
+         VALUES ($1, $2, $3, $4, $5, $6)",
+        [user_id, question_id.to_i, answer.to_i, is_correct, current_time, test_id]
+      )
+    end
+  end
+
+  session[:test_id] = test_id # 結果画面でどのテストの結果かを識別するためにセッションに保存
+  redirect '/quiz_result'
+end
+
 
 # パスナビのサイトからのデータ取得
 class PassNaviScraper

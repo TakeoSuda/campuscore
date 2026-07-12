@@ -1,0 +1,22 @@
+<h1>今回のテスト</h1>
+
+<% @test_questions.each do | test_id, test_data | %>
+
+<form action="/listed_tests/submit" method="post">
+        <input type="hidden" name="test_id" value="<%= test_id %>">
+        <h2><%= test_id %>. <%= test_data[:test_name] %></h2>
+        <% test_data[:questions].each_with_index do | q, index | %>
+            <p><%= index + 1 %>.<%= q[:question_text] %></p>
+            <label><input type="radio" name="answers[<%= q[:question_id] %>]" value="1" required>①<%= q[:option_1] %></label><br>
+            <label><input type="radio" name="answers[<%= q[:question_id] %>]" value="2">②<%= q[:option_2] %></label><br>
+            <label><input type="radio" name="answers[<%= q[:question_id] %>]" value="3">③<%= q[:option_3] %></label><br>
+            <label><input type="radio" name="answers[<%= q[:question_id] %>]" value="4">④<%= q[:option_4] %></label><br>
+        <% end %>
+
+    <p><button type="submit">回答を送信する</button></p>
+</form>
+
+<% end %>
+
+
+
