@@ -4,7 +4,7 @@
     <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%; margin-top: 0;">
       <thead>
         <tr style="background-color: #f2f2f2;">
-          <th>単元（カテゴリー）</th>
+          <th>単元</th>
           <th>正解数 / 総問題数</th>
           <th>得点率（%）</th>
         </tr>
@@ -34,6 +34,41 @@
           <tr>
             
             <td><strong><%= display_name %></strong></td>
+            <td><%= scores[:correct] %> / <%= scores[:total] %> 問</td>
+            <td>
+              <span style="font-weight: bold; color: <%= accuracy_rate >= 80 ? 'green' : 'black' %>;">
+                <%= accuracy_rate %> %
+              </span>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+<h1><%= @results.first["name"] %>さんのテストごとのテスト結果</h1>
+
+  <div class="user-report-card" style="border-radius: 15px; padding: 15px; margin-bottom: 20px;">    
+    <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%; margin-top: 0;">
+      <thead>
+        <tr style="background-color: #f2f2f2;">
+          <th>テスト名</th>
+          <th>正解数 / 総問題数</th>
+          <th>得点率（%）</th>
+        </tr>
+      </thead>
+      
+
+      <tbody>
+
+        <% @test_stats.each do |test_name, scores| %>
+          <% 
+            # 得点率の計算（0除算対策つき）
+            accuracy_rate = scores[:total] > 0 ? (scores[:correct].to_f / scores[:total] * 100).round(1) : 0 
+          %>
+          <tr>
+            
+            <td><strong><%= test_name %></strong></td>
             <td><%= scores[:correct] %> / <%= scores[:total] %> 問</td>
             <td>
               <span style="font-weight: bold; color: <%= accuracy_rate >= 80 ? 'green' : 'black' %>;">

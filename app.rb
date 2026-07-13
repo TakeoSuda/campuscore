@@ -1168,6 +1168,26 @@ get '/user_all_quiz_results' do
 
   end
 
+  @test_results = client.exec_params(
+    "SELECT al.selected_option, al.is_correct, t.id AS test_id, t.name AS test_name, al.answered_at AS answered_at
+    FROM answer_logs al
+    JOIN users u ON al.user_id = u.id
+    JOIN tests t ON t.id = al.test_id
+    WHERE u.id = $1
+    ORDER BY al.answered_at DESC",
+    [@user_id]
+    )
+
+    @test_stats = Hash.new { |hash, key| hash[key] = {correct:0, total:0}}
+
+    @test_results.each do |row|
+      test_name = row["test_name"]
+      is_correct = row["is_correct"] == "t"
+
+      @test_stats[test_name][:total] += 1
+      @test_stats[test_name][:correct] +=1 if is_correct
+    end
+
   erb :user_all_quiz_results
 end
 
@@ -1202,6 +1222,26 @@ get '/users_quiz_result' do
     # 正解だったら正解数を+1
     @user_stats[user][category][:correct] += 1 if is_correct
   end
+
+    @test_results = client.exec_params(
+    "SELECT u.name AS user_name, u.id AS user_id, al.selected_option, al.is_correct, t.id AS test_id, t.name AS test_name, al.answered_at AS answered_at
+    FROM answer_logs al
+    JOIN users u ON al.user_id = u.id
+    JOIN tests t ON t.id = al.test_id
+    ORDER BY al.answered_at DESC"
+    )
+
+    @test_stats = Hash.new { |hash, key| hash[key] = Hash.new { |shash, skey| shash[skey] = {correct:0, total:0}}}
+
+    @test_results.each do |row|
+      user = row["user_name"]
+      user_id = row["user_id"]
+      test_name = row["test_name"]
+      is_correct = row["is_correct"] == "t"
+
+      @test_stats[user][test_name][:total] += 1
+      @test_stats[user][test_name][:correct] +=1 if is_correct
+    end
 
   erb :users_quiz_result
 end
