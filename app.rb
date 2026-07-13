@@ -1137,6 +1137,29 @@ get '/quiz_result' do
   erb :quiz_result
 end
 
+# 各ユーザーが自分の試験結果を閲覧するページ
+get '/user_all_quiz_results' do
+  @user_id = session[:user_id]
+
+  @results = client.exec_params(
+    "SELECT q.category, q.question_text, q.option_1, q.option_2, q.option_3, q.option_4, 
+    q.correct_option, al.selected_option, al.is_correct, al.answered_at, u.name 
+     FROM answer_logs al
+     JOIN english_questions q ON al.question_id = q.id
+     JOIN users u ON al.user_id = u.id
+     WHERE u.id = $1
+     ORDER BY al.answered_at DESC",
+    [@user_id]
+  ).to_a
+
+  @correct_answers = @results.select { |r| r["is_correct"] == "t" }
+  @wrong_answers = @results.select { |r| r["is_correct"] == "f" }
+  @total_count = @results.length
+  @accuracy_rate = @total_count > 0 ? (@correct_answers.length.to_f / @total_count * 100).round(2) : 0
+
+  erb :user_all_quiz_results
+end
+
 #全生徒のオンラインテストの成績表示
 get '/users_quiz_result' do
   # 管理者かどうかのチェック
@@ -1154,7 +1177,8 @@ get '/users_quiz_result' do
 
   # ユーザーごと、単元ごとの点数を集計するための空のハッシュを用意
   # 構造イメージ: { "ユーザー名" => { "単元名" => { correct: 0, total: 0 } } }
-  @user_stats = Hash.new { |h, k| h[k] = Hash.new { |sh, sk| sh[sk] = { correct: 0, total: 0 } } }
+  @user_stats = Hash.new { |hash, key| hash[key] = Hash.new { |shash, skey| shash[skey] = { correct: 0, total: 0} } } 
+
 
   @results.each do |row|
     user = row["user_name"]
