@@ -1157,6 +1157,17 @@ get '/user_all_quiz_results' do
   @total_count = @results.length
   @accuracy_rate = @total_count > 0 ? (@correct_answers.length.to_f / @total_count * 100).round(2) : 0
 
+  @category_results = Hash.new{ |hash, key| hash[key] = {correct: 0, total: 0}}
+
+  @results.each do |r|
+    category = r["category"]
+    is_correct = r["is_correct"] == "t"
+
+    @category_results[category][:total] += 1
+    @category_results[category][:correct] += 1 if is_correct
+
+  end
+
   erb :user_all_quiz_results
 end
 

@@ -1,8 +1,57 @@
+<h1><%= @results.first["name"] %>さんのテスト結果</h1>
+
+  <div class="user-report-card" style="border-radius: 15px; padding: 15px; margin-bottom: 20px;">    
+    <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%; margin-top: 0;">
+      <thead>
+        <tr style="background-color: #f2f2f2;">
+          <th>単元（カテゴリー）</th>
+          <th>正解数 / 総問題数</th>
+          <th>得点率（%）</th>
+        </tr>
+      </thead>
+      
+
+      <tbody>
+
+        <% 
+            # 💡 変換用の辞書を用意（キーがDBの値 => 値が画面に出したい文字）
+            category_mapping = {
+            "tense" => "時制",
+            "sentence_pattern" => "文型",
+            "passive" => "受動態",
+            "auxiliary_verb" => "助動詞",
+            "to_infinitive" => "不定詞",
+            "gerund" => "動名詞"
+            }
+        %>
+
+        <% @category_results.each do |category_name, scores| %>
+          <% 
+            # 得点率の計算（0除算対策つき）
+            accuracy_rate = scores[:total] > 0 ? (scores[:correct].to_f / scores[:total] * 100).round(1) : 0 
+            display_name = category_mapping[category_name] || category_name
+          %>
+          <tr>
+            
+            <td><strong><%= display_name %></strong></td>
+            <td><%= scores[:correct] %> / <%= scores[:total] %> 問</td>
+            <td>
+              <span style="font-weight: bold; color: <%= accuracy_rate >= 80 ? 'green' : 'black' %>;">
+                <%= accuracy_rate %> %
+              </span>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
 <h1><%= @results.first["name"] %>さんのテスト結果詳細</h1>
+<div style="padding: 15px;">
 <table border="1" cellpadding="5" cellspacing="0">
     <thead>
         <tr style="background-color: #f2f2f2;">
-        <th>単元（カテゴリー）</th>
+        <th>単元</th>
         <th>問題文</th>
         <th>選択肢①</th>
         <th>選択肢②</th>
@@ -16,8 +65,13 @@
     </thead>
     <tbody>
         <% @results.each do |result| %>
+
+
+            <% 
+                display_name = category_mapping[result["category"]] || category_name
+            %>
         <tr>
-            <td><%= result["category"] %></td>
+            <td style="font-weight: bold;"><%= display_name %></td>
             <td><%= result["question_text"] %></td>
             <td><%= result["option_1"] %></td>
             <td><%= result["option_2"] %></td>
@@ -33,3 +87,7 @@
         <% end %>
     </tbody>
 </table>
+</div>
+
+
+<%# border: 1px solid #ccc; %>
