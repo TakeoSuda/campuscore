@@ -103,7 +103,7 @@
 
 
             <% 
-                display_name = category_mapping[result["category"]] || category_name
+                display_name = category_mapping[result["category"]] || result["category"]
             %>
         <tr>
             <td style="font-weight: bold;"><%= display_name %></td>
