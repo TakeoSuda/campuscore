@@ -1,8 +1,14 @@
 <h1>面談記録</h1>
 <form action="/consults/new" method="post">
 <div>
-<span>面談日：</span><input type="date" name="date" placeholder="面談日" required>
-<span>面談内容：</span><textarea name="content" rows="4" cols="50" placeholder="面談内容" required></textarea>
+<div>
+<label>面談日：</label>
+<input type="date" name="date" placeholder="面談日" required>
+</div>
+<div>
+<p><label>面談内容：</label></p>
+<p><textarea name="content" rows="4" style="width: 100%;" placeholder="面談内容" required></textarea></p>
+</div>
 <input type="submit" value="保存">
 </div>
 </form>

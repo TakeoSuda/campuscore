@@ -1,16 +1,18 @@
-<h1>勉強日記</h1>
+<h1>勉強日記を書く</h1>
 <form action="/diary/new" method="post">
 <div>
 <label for="date">日付:</label>
 <input type="date" name="date" id="date" placeholder="日付" required>
 </div>
 <div>
-<label for="content">内容:</label>
-<textarea name="content" id="content" rows="4" cols="50" placeholder="内容" required></textarea>
+<p><label for="content">内容:</label></p>
+<p><textarea name="content" id="content" rows="4" style="width: 100%;" placeholder="内容" required></textarea></p>
 </div>
 <input type="submit" value="保存">
 </form>
 
+<br>
+<h1>勉強日記</h1>
 <% @diary_entries.each do |entry| %>
 <div>
 <p>日付：<%= entry["date"] %></p>
