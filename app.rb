@@ -246,7 +246,7 @@ get '/users_info/:id' do
            plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status, plans.start_date AS p_start_date, plans.end_date AS p_end_date,
            diary_entries.content AS d_content, diary_entries.date AS d_date,
            consults.content AS c_content, consults.date AS c_date,
-           instructions.content AS i_content, instructions.created_at AS i_created_at,
+           instructions.content AS i_content, instructions.created_at AS i_created_at, instructions.category AS i_category,
            instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at, instruction_replies.user_id AS ir_user_id,
           mock_exams.title AS me_title, mock_exams.exam_type AS me_exam_type, mock_exams.english_r AS me_english_r, mock_exams.english_l AS me_english_l, 
           mock_exams.math_1a AS me_math_1a, mock_exams.math_2bc AS me_math_2bc, mock_exams.japanese AS me_japanese, mock_exams.physics_basic AS me_physics_basic, 
@@ -274,7 +274,7 @@ get '/users_info/:id' do
     user_data['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'], 'start_date' => row['p_start_date'], 'end_date' => row['p_end_date'] }
     user_data['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
     user_data['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
-    user_data['instructions'] << { 'content' => row['i_content'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
+    user_data['instructions'] << { 'content' => row['i_content'], 'category' => row['i_category'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
     user_data['mock_exams'] << { 'title' => row['me_title'], 'exam_type' => row['me_exam_type'], 'english_r' => row['me_english_r'], 'english_l' => row['me_english_l'], 'math_1a' => row['me_math_1a'], 'math_2bc' => row['me_math_2bc'], 
     'japanese' => row['me_japanese'], 'physics_basic' => row['me_physics_basic'], 'chemistry_basic' => row['me_chemistry_basic'], 'biology_basic' => row['me_biology_basic'], 'earth_science_basic' => row['me_earth_science_basic'], 'physics' => row['me_physics'], 
     'chemistry' => row['me_chemistry'], 'biology' => row['me_biology'], 'earth_science' => row['me_earth_science'], 'world_history' => row['me_world_history'], 'japanese_history' => row['me_japanese_history'], 'geography' => row['me_geography'], 'civics_ethics' => row['me_civics_ethics'], 

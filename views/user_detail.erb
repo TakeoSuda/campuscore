@@ -84,6 +84,7 @@
             <h1>学習アドバイス</h1>
             <% @user['instructions'].each do |instruction| %>
                 <p>日付: <%= instruction['created_at'] %></p>
+                <p style="font-weight: bold;">タイトル： <%= instruction['category'] %></p>
                 <p style="overflow-wrap: break-word;">内容: <%= instruction['content'] %></p>
                 <p>返信: <% if instruction['ir_user_id'] == @user['id'] %>
                     <%= instruction['reply_content'] %></p>
