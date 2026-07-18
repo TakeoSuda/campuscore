@@ -86,6 +86,13 @@ before do
   end
 end
 
+# 安全にHTMLをエスケープするためのヘルパー
+helpers do
+  def html_escape(text)
+    Rack::Utils.escape_html(text)
+  end
+end
+
 # ReactからのPOSTリクエストを受け取る窓口
 post '/api/quiz_results' do
   # 1. データの受信設定
@@ -229,6 +236,32 @@ get '/users_info' do
   @users_by_campus = users_list.group_by { |user| user['campus'] }
 
   erb :users_info
+end
+
+get '/member_search' do
+    redirect '/login' unless session[:user_id]
+  user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  halt 404 unless user
+  redirect '/' unless user["is_admin"].to_s == 't'
+
+  query = params[:query]
+  @members = []
+
+  if query && !query.strip.empty?
+    # 検索ワードがある場合：プレースホルダ（$1）を使ってSQLインジェクションを防ぐ
+    # カタカナや漢字、メールアドレスの部分一致に対応するため LIKE を使用
+    @members = client.exec_params(
+      "SELECT * FROM users WHERE name LIKE $1 OR name_kana LIKE $1 OR school LIKE $1 OR email LIKE $1 ORDER BY id DESC", 
+      ["%#{query}%"]
+    )
+  end
+
+  #学年ごとに生徒の名前を50音順で表示するためのSQLクエリを作成
+  users_list = client.exec_params("SELECT id, name, name_kana, grade, campus, avatar FROM users ORDER BY grade ASC, name_kana ASC").to_a
+  @users_by_campus = users_list.group_by { |user| user['campus'] }
+
+  erb :users_info
+  
 end
 
 # 個別ユーザーの詳細表示

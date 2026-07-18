@@ -1,4 +1,26 @@
 <h1>全ユーザー情報</h1>
+
+<div style="margin-top: 10px; margin-bottom: 15px;">
+<form action="/member_search" method="get" class="search-form">
+  <input type="text" name="query" placeholder="会員名や学校名やメールアドレスで検索..." value="<%= params[:query] %>">
+  <button type="submit" style="padding: 0.5rem 1.0rem;">検索</button>
+</form>
+</div>
+
+<% if @members %>
+    <h2>検索結果</h2>
+    <ol>
+    <% @members.each do |member| %>
+        <li>
+        <!-- 会員の詳細ページ（/members/1 など）へのリンク -->
+            <a href="/users_info/<%= member['id'] %>">
+            学年【<%= html_escape(member['grade']) %>】<%= html_escape(member['name']) %> （<%= html_escape(member['email']) %>）
+            </a>
+        </li>
+    <% end %>
+    </ol>
+<% end %>
+
 <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
 <% x = 1 %>
 <% @users_by_campus.each do |campus, users| %>
