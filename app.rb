@@ -86,12 +86,44 @@ before do
   end
 end
 
-# 安全にHTMLをエスケープするためのヘルパー
+# ヘルパー一覧
 helpers do
+  # 安全にHTMLをエスケープするためのヘルパー
   def html_escape(text)
     Rack::Utils.escape_html(text)
   end
+
+  # アプリ内で使い回せるメール送信ヘルパー
+  def send_app_email(to_email, subject, body_text)
+    smtp_user     = ENV['SMTP_USER']    
+    smtp_password = ENV['SMTP_PASSWORD'] 
+    Pony.mail({
+      to:      to_email,
+      from:    ENV['SMTP_USER'],     # パスワードリセットと同じ環境変数
+      subject: subject,
+      body:    body_text,
+      via: :smtp,
+      via_options: {
+        address:              'smtp.gmail.com',
+        port:                 '587',
+        enable_starttls_auto: true,
+        user_name:            smtp_user,
+        password:             smtp_password,
+        authentication:       :plain,
+        domain:               "localhost.localdomain"
+      }
+    })
+  rescue => e
+    # エラーハンドリングも共通化して、ログに残るようにする
+    puts "=== [警告] メール送信エラーが発生しました ==="
+    puts "宛先: #{to_email}"
+    puts "エラー内容: #{e.message}"
+    puts "==========================================="
+    # 呼び出し元（ルーティング側）でエラーを検知したい場合のために、あえてエラーを再発生させる
+    raise e 
+  end
 end
+
 
 # ReactからのPOSTリクエストを受け取る窓口
 post '/api/quiz_results' do
@@ -731,8 +763,6 @@ get '/password_reset' do
   erb :password_reset
 end
 
-require 'pony'
-
 post '/password_reset' do
   email = params[:email]
   user = client.exec_params("SELECT * FROM users WHERE email = $1", [email]).first
@@ -753,29 +783,12 @@ post '/password_reset' do
     url = "#{base_url}/password_reset/edit?token=#{reset_token}"
 
     begin
-        Pony.mail(
-        to: user['email'],
-        from: ENV['SMTP_USER'],     # 送信元（自分のアドレス）
-        subject: "【CampusCore】パスワード再設定",
-        body: "以下のURLをクリックして、1時間以内に再設定を完了してください。\n\n#{url}",
-        via: :smtp,
-        via_options: {
-          address:              'smtp.gmail.com',
-          port:                 '587',
-          enable_starttls_auto: true,
-          user_name:            ENV['SMTP_USER'],     # 環境変数から読み込む
-          password:             ENV['SMTP_PASSWORD'], # 環境変数から読み込む
-          authentication:       :plain,
-          domain:               "localhost.localdomain"
-        })
-        @message = "ご登録のメールアドレスに再設定用のリンクを送信しました。メールボックスをご確認ください。"
+      # 💡 共通化したヘルパーを呼び出すだけ！
+      send_app_email(user['email'], "【CampusCore】パスワード再設定", "以下のURLをクリックして、1時間以内に再設定を完了してください。\n\n#{url}")
+      
+      @message = "ご登録のメールアドレスに再設定用のリンクを送信しました。メールボックスをご確認ください。"
     rescue => e
-        # ❌ 相手の容量不足（452エラー）などで送信に失敗した場合、ここに飛ぶ！
-        # サーバーのログにエラー内容を出力して、無限リトライをここでストップさせる
-        puts "=== [警告] メール送信エラーが発生しました ==="
-        puts e.message
-        puts "==========================================="
-        @error = "メール送信に失敗しました: #{e.message}"
+      @error = "メール送信に失敗しました: #{e.message}"
     end
   else
     @error = "そのメールアドレスは登録されていません。メールアドレスが正しいか確認してください。"
@@ -902,6 +915,22 @@ client.exec_params(
     [params[:content], params[:category], target_user_id]
   )
 
+receiver = client.exec_params("SELECT email, name FROM users WHERE id = $1", [target_user_id]).first
+  
+  if receiver && receiver['email']
+    subject = "【CampusCore】新着メッセージが届きました"
+    body    = "#{receiver['name']} 様\n\n新着メッセージが届いています。【CampusCore】にログインして確認してください。"
+    
+    begin
+      # 💡 同じヘルパーを使い回せる！
+      send_app_email(receiver['email'], subject, body)
+    rescue => e
+      # 通知エラーが起きても、メッセージの投稿自体は成功しているので、
+      # ログに出力するだけで処理を進める
+      puts "通知メールの送信に失敗しました（処理は継続します）"
+    end
+  end
+
   redirect '/instructions'
 end
 
@@ -914,6 +943,22 @@ post '/instructions/:id/reply' do
     "INSERT INTO instruction_replies (instruction_id, user_id, content, created_at) VALUES ($1, $2, $3, NOW())",
     [instruction_id, user_id, content]
   )
+
+  receiver = client.exec_params("SELECT email, name FROM users WHERE is_admin = $1", [true]).first
+  
+  if receiver && receiver['email']
+    subject = "【CampusCore】ユーザーへの学習アドバイスに対する返信が届きました"
+    body    = "#{receiver['name']} 様\n\n学習アドバイスに対する返信が届いています。【CampusCore】にログインして確認してください。"
+    
+    begin
+      # 💡 同じヘルパーを使い回せる！
+      send_app_email(receiver['email'], subject, body)
+    rescue => e
+      # 通知エラーが起きても、メッセージの投稿自体は成功しているので、
+      # ログに出力するだけで処理を進める
+      puts "通知メールの送信に失敗しました（処理は継続します）"
+    end
+  end
 
   redirect "/instructions"
 end
