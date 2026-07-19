@@ -18,7 +18,7 @@
       <% instruction['replies'].each do |reply| %>
         <div class="reply" style= "padding-left: 10px; padding-right: 10px;">
           <p><%= reply['content'] %>
-          <span class="reply-date">（<%= Time.parse(reply['created_at']).strftime("%Y-%m-%d %H:%M") %>）</span></p>
+          <span class="reply-date">（<%= Time.parse(reply['created_at']).getlocal("+09:00").strftime("%Y-%m-%d %H:%M") %>）</span></p>
         </div>
       <% end %>
     </div>
