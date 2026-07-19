@@ -137,8 +137,8 @@
     </div>
 
     <div>
-        <label for="mock_exam_result_image">模試結果画像:</label>
-        <input type="file" name="mock_exam_result_image" id="mock_exam_result_image" accept="image/*">
+        <label for="mock_exam_result_image" style="font-weight: bold;">模試結果（PDF・画像）（⭐️講師が質の高いアドバイスするために必要なデータなので、なるべくアップロードしてください）:</label>
+        <input type="file" name="mock_exam_result_image" id="mock_exam_result_image" accept="image/*, application/pdf">
     </div>
 
     <input type="submit" value="保存">
@@ -176,8 +176,14 @@
     <p>公共: <%= exam['civics_basic'] %><span> 点</span></p>
     <p>情報: <%= exam['informatics'] %><span> 点</span></p>
     <% if exam['mock_exam_result_image_url'] && !exam['mock_exam_result_image_url'].empty? %>
-      <p>模試結果画像:</p>
-      <img src="<%= exam['mock_exam_result_image_url'] %>" alt="模試結果画像" style="max-width: 100%; height: auto;">
+      <p>模試結果:</p>
+      <% if exam['mock_exam_result_image_url'].downcase.end_with?(".pdf") %>
+        <object data="<%= exam['mock_exam_result_image_url'] %>" type="application/pdf" width="100%" height="600">
+        <p>ブラウザでPDFが表示できない場合は、<a href="<%= exam['mock_exam_result_image_url'] %>" target="_blank">こちらからダウンロード</a>してください。</p>
+        </object>
+      <% else %>
+        <img src="<%= exam['mock_exam_result_image_url'] %>" alt="模試結果画像" style="max-width: 100%; height: auto;">
+      <% end %>
     <% end %>
     <p><form action="/mock_exams/<%= exam['id'] %>/delete" method="post" onsubmit="return confirm('本当に削除しますか？');" style="display: inline;">
     <input type="submit" value="この模試・入試結果を削除する">

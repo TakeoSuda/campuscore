@@ -1006,18 +1006,21 @@ post '/mock_exams/new' do
   informatics = params[:informatics].to_i
   taken_at = params[:taken_at]
 
-  # 模試結果画像のアップロード処理
+  # 模試結果PDFと画像のアップロード処理
   mock_exam_result_image_file = params[:mock_exam_result_image]
 
-  # --- 1. 画像の保存処理 (Cloudinary対応版) ---
+  # --- 1. PDFと画像の保存処理 (Cloudinary対応版) ---
   if mock_exam_result_image_file
     tempfile = mock_exam_result_image_file[:tempfile]
 
     # 💡 ローカルへの保存処理の代わりに、Cloudinaryに直接アップロード
     # RenderのEnvironmentに登録した鍵を使って自動的に通信してくれる
-    response = Cloudinary::Uploader.upload(tempfile.path)
+    response = Cloudinary::Uploader.upload(
+      tempfile.path,
+      resource_type: "image" 
+      )
     
-    # 💡 データベース（avatarカラム）には、Cloudinary側で生成された「画像のURL」をそのまま保存する
+    # 💡 データベース（avatarカラム）には、Cloudinary側で生成された「PDFと画像のURL」をそのまま保存する
     # これにより、下のSQL処理（unique_filenameの箇所）を変更せずにそのまま動かせる
     unique_filename = response['secure_url']
   else
