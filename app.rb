@@ -945,10 +945,17 @@ post '/instructions/:id/reply' do
   )
 
   receiver = client.exec_params("SELECT email, name FROM users WHERE is_admin = $1", [true]).first
+
+  reply_sender = client.exec_params(
+    "SELECT name 
+    FROM users u
+    JOIN instruction_replies ir ON u.id = ir.user_id
+    WHERE ir.instruction_id = $1",
+    [instruction_id]).first
   
   if receiver && receiver['email']
-    subject = "【CampusCore】ユーザーへの学習アドバイスに対する返信が届きました"
-    body    = "#{receiver['name']} 様\n\n学習アドバイスに対する返信が届いています。【CampusCore】にログインして確認してください。"
+    subject = "【CampusCore】#{reply_sender['name']}様への学習アドバイスに対する返信が届きました"
+    body    = "#{receiver['name']} 様\n\n#{reply_sender['name']}様への学習アドバイスに対する返信が届いています。【CampusCore】にログインして確認してください。"
     
     begin
       # 💡 同じヘルパーを使い回せる！
