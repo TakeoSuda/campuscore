@@ -123,9 +123,17 @@
                 <p>歴史総合: <%= exam['history_basic'] %> 点</p>
                 <p>公共: <%= exam['civics_basic'] %> 点</p>
                 <p>情報: <%= exam['informatics'] %> 点</p>
-                <p>結果画像: <% if exam['mock_exam_result_image_url'] %>
-                    <img src="<%= exam['mock_exam_result_image_url'] %>" alt="模試結果" style="max-width: 100%;">
-                <% end %></p>
+                <p>結果画像: 
+                    <% if exam['mock_exam_result_image_url'] && !exam['mock_exam_result_image_url'].empty? %>
+                        <% if exam['mock_exam_result_image_url'].downcase.end_with?(".pdf") %>
+                            <object data="<%= exam['mock_exam_result_image_url'] %>" type="application/pdf" width="100%" height="600">
+                            <p>ブラウザでPDFが表示できない場合は、<a href="<%= exam['mock_exam_result_image_url'] %>" target="_blank">こちらからダウンロード</a>してください。</p>
+                            </object>
+                        <% else %>
+                            <img src="<%= exam['mock_exam_result_image_url'] %>" alt="模試結果画像" style="max-width: 100%; height: auto;">
+                        <% end %>
+                    <% end %>
+                </p>
                 <hr>
             <% end %>
     </div>
