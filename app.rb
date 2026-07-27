@@ -1,4 +1,4 @@
-require 'dotenv'
+  require 'dotenv'
 Dotenv.load
 require 'sinatra'
 require 'pg'
@@ -17,6 +17,7 @@ require 'cloudinary'
 require 'rtesseract'
 require 'google-cloud-vision'
 require 'openai'
+require 'connection_pool'
 
 
 # --- 修正後のセキュリティ設定 ---
@@ -36,14 +37,16 @@ use Rack::Cors do
   end
 end
 
-# --- 1. データベース接続設定 (一箇所に集約) ---
-db_url = ENV['DATABASE_URL']
-if db_url
-  # Render環境（SSLモードを有効にして接続）
-  client = PG.connect("#{db_url}?sslmode=require")
-else
-  # ローカル環境（自分のMac）
-  client = PG.connect(host: "localhost", dbname: "campus_db_34pr")
+# --- 1. データベース接続設定 (コネクションプール化) ---
+DB_POOL = ConnectionPool.new(size: 5, timeout: 5) do
+  db_url = ENV['DATABASE_URL']
+  if db_url
+    # Render環境（SSLモードを有効にして接続）
+    PG.connect("#{db_url}?sslmode=require")
+  else
+    # ローカル環境（自分のMac）
+    PG.connect(host: "localhost", dbname: "campus_db_34pr")
+  end
 end
 
 # --- 2. Sinatraの基本設定 ---
@@ -78,10 +81,12 @@ end
 
 before do
   if session[:user_id]
-    result = client.exec_params(
+    result = DB_POOL.with do | conn |
+    conn.exec_params(
       "SELECT avatar FROM users WHERE id = $1 LIMIT 1",
       [session[:user_id]]
     )
+    end
     @current_user = result.first
   end
 end
@@ -142,14 +147,11 @@ post '/api/quiz_results' do
 
   puts "resultsの中身: #{results.inspect}" # ここが [] だと保存されない
 
-    # 3. データベースに接続
-    # Render環境なら ENV['DATABASE_URL'] を使い、ローカルなら自分のDB名を入れる
-    db_config = ENV['DATABASE_URL'] || { dbname: 'campus_db_34pr' }
-    client = PG.connect(db_config)
-
     # 4. 各問題の結果を1つずつ保存（INSERT）
-    results.each do |res|
-      client.exec_params(
+    DB_POOL.with do | conn |
+
+      results.each do |res|
+        conn.exec_params(
         "INSERT INTO quiz_results (user_id, question_text, user_answer, is_correct) VALUES ($1, $2, $3, $4)",
         [
           user_id,
@@ -157,7 +159,8 @@ post '/api/quiz_results' do
           res['userAnswer'],
           res['isCorrect']
         ]
-      )
+        )
+      end
     end
 
     # 5. 成功したことをReactに伝える
@@ -168,9 +171,6 @@ post '/api/quiz_results' do
     # エラーが起きた場合
     status 500
     { error: e.message }.to_json
-  ensure
-    # 6. 最後に必ずDB接続を閉じる
-    client.close if client
   end
 end
 
@@ -192,10 +192,12 @@ post "/signup" do
   @school = params[:school]
   @grade = params[:grade]
 
-  result = client.exec_params("SELECT email FROM users WHERE email = $1", [params[:email]])
-  if result.first
+  @result = DB_POOL.with do |conn|
+    conn.exec_params("SELECT email FROM users WHERE email = $1", [params[:email]])
+  end
+  if @result.first
     @error = "そのメールアドレスは既に使用されています"
-    result.clear # 使い終わったらクリア
+    @result.clear # 使い終わったらクリア
     return erb :signup
   end
 
@@ -221,11 +223,13 @@ post "/signup" do
 
 
 
-
-  client.exec_params(
+  @result = DB_POOL.with do |conn|
+    conn.exec_params(
     "INSERT INTO users (name_kana, name, email, password, school, grade) VALUES ($1, $2, $3, $4, $5, $6)",
     [@name_kana, @name, @email, @password, @school, @grade]
-  )
+    )
+  end
+  
 
   redirect "/login"
 end
@@ -238,7 +242,9 @@ post "/login" do
   email = params[:email]
   password = params[:password]
 
-  result = client.exec_params("SELECT * FROM users WHERE email = $1", [email])
+  result = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE email = $1", [email])
+  end
   user = result.first
 
   if user && BCrypt::Password.new(user['password']) == password
@@ -259,12 +265,17 @@ end
 
 get '/users_info' do
   redirect '/login' unless session[:user_id]
-  user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+
+  user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless user
   redirect '/' unless user["is_admin"].to_s == 't'
 
   #学年ごとに生徒の名前を50音順で表示するためのSQLクエリを作成
-  users_list = client.exec_params("SELECT id, name, name_kana, grade, campus, avatar FROM users ORDER BY grade ASC, name_kana ASC").to_a
+  users_list = DB_POOL.with do | conn |
+    conn.exec_params("SELECT id, name, name_kana, grade, campus, avatar FROM users ORDER BY grade ASC, name_kana ASC").to_a
+  end
   @users_by_campus = users_list.group_by { |user| user['campus'] }
 
   erb :users_info
@@ -272,7 +283,10 @@ end
 
 get '/member_search' do
     redirect '/login' unless session[:user_id]
-  user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+
+  user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless user
   redirect '/' unless user["is_admin"].to_s == 't'
 
@@ -282,14 +296,18 @@ get '/member_search' do
   if query && !query.strip.empty?
     # 検索ワードがある場合：プレースホルダ（$1）を使ってSQLインジェクションを防ぐ
     # カタカナや漢字、メールアドレスの部分一致に対応するため LIKE を使用
-    @members = client.exec_params(
+    @members = DB_POOL.with do | conn |
+      conn.exec_params(
       "SELECT * FROM users WHERE name LIKE $1 OR name_kana LIKE $1 OR school LIKE $1 OR email LIKE $1 ORDER BY id DESC", 
       ["%#{query}%"]
     )
+    end
   end
 
   #学年ごとに生徒の名前を50音順で表示するためのSQLクエリを作成
-  users_list = client.exec_params("SELECT id, name, name_kana, grade, campus, avatar FROM users ORDER BY grade ASC, name_kana ASC").to_a
+  users_list = DB_POOL.with do | conn |
+    conn.exec_params("SELECT id, name, name_kana, grade, campus, avatar FROM users ORDER BY grade ASC, name_kana ASC").to_a
+  end
   @users_by_campus = users_list.group_by { |user| user['campus'] }
 
   erb :users_info
@@ -299,14 +317,17 @@ end
 # 個別ユーザーの詳細表示
 get '/users_info/:id' do
   redirect '/login' unless session[:user_id]
-  user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless user
   redirect '/' unless user["is_admin"].to_s == 't'
     
   target_id = params[:id]
 
   # 特定のユーザー1人分だけをJOINで取得
-  raw_data = client.exec_params("
+  raw_data = DB_POOL.with do | conn |
+    conn.exec_params("
     SELECT users.*, 
            plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status, plans.start_date AS p_start_date, plans.end_date AS p_end_date,
            diary_entries.content AS d_content, diary_entries.date AS d_date,
@@ -329,6 +350,7 @@ get '/users_info/:id' do
     LEFT JOIN mock_exams ON users.id = mock_exams.user_id
     WHERE users.id = $1
   ", [target_id]).to_a
+  end
 
   halt 404 if raw_data.empty?
 
@@ -367,10 +389,13 @@ end
 get '/mypage' do
   user_id = session[:user_id]
 
-  result = client.exec_params(
-  "SELECT * FROM users WHERE id=$1",
-  [user_id]
-  )
+  result = DB_POOL.with do | conn |
+    conn.exec_params(
+    "SELECT * FROM users WHERE id=$1",
+    [user_id]
+    )  
+  end
+  
 
   @user = result[0]
 
@@ -378,9 +403,11 @@ get '/mypage' do
   @is_admin = (@user['is_admin'] == 't' || @user['is_admin'] == true)
 
   # 講師からのお知らせを新着順に取得
-  @teacher_announcements = client.exec_params(
-    "SELECT * FROM teacher_announcements ORDER BY created_at DESC LIMIT 5"
-  ).to_a
+  @teacher_announcements = DB_POOL.with do | conn |
+    conn.exec_params(
+      "SELECT * FROM teacher_announcements ORDER BY created_at DESC LIMIT 5"
+    ).to_a
+  end
 
   erb :mypage
 end
@@ -388,10 +415,12 @@ end
 get "/mypage_edit" do
   user_id = session[:user_id]
 
-  result = client.exec_params(
-    "SELECT * FROM users WHERE id=$1",
-    [user_id]
-  )
+  result = DB_POOL.with do | conn |
+    conn.exec_params(
+      "SELECT * FROM users WHERE id=$1",
+      [user_id]
+    )
+  end
 
   @user = result[0]
 
@@ -405,10 +434,12 @@ post '/mypage_edit' do
   @name = params[:name]
   @email = params[:email]
   
-current_user = client.exec_params(
-  "SELECT * FROM users WHERE id=$1",
-  [user_id]
-).first
+current_user = DB_POOL.with do | conn |
+  conn.exec_params(
+    "SELECT * FROM users WHERE id=$1",
+    [user_id]
+  ).first
+end
 halt 404 unless current_user
 
 
@@ -504,10 +535,12 @@ end
     unique_filename = nil 
   end
 
-  client.exec_params(
-    "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, campus=$5, school=$6, grade=$7, desired_school=$8, faculty=$9, department=$10, second_desired_school=$11, second_desired_faculty=$12, second_desired_department=$13, third_desired_school=$14, third_desired_faculty=$15, third_desired_department=$16, target_ct_reading=$17, target_ct_listening=$18, last_ct_reading=$19, last_ct_listening=$20, eiken_level=$21, desired_eiken_level=$22, strong_subject=$23, weak_subject=$24, hobby=$25, club=$26, desired_job=$27, dream=$28, resolution=$29, consult=$30, worry=$31, recommend_exam=$32, request_for_class=$33, avatar=$34 WHERE id=$35",
-    [@name_kana, @name, @email, @password, @campus, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @third_desired_school, @third_desired_faculty, @third_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, @request_for_class, unique_filename, user_id]
-  )
+  DB_POOL.with do | conn |
+    conn.exec_params(
+      "UPDATE users SET name_kana=$1, name=$2, email=$3, password=$4, campus=$5, school=$6, grade=$7, desired_school=$8, faculty=$9, department=$10, second_desired_school=$11, second_desired_faculty=$12, second_desired_department=$13, third_desired_school=$14, third_desired_faculty=$15, third_desired_department=$16, target_ct_reading=$17, target_ct_listening=$18, last_ct_reading=$19, last_ct_listening=$20, eiken_level=$21, desired_eiken_level=$22, strong_subject=$23, weak_subject=$24, hobby=$25, club=$26, desired_job=$27, dream=$28, resolution=$29, consult=$30, worry=$31, recommend_exam=$32, request_for_class=$33, avatar=$34 WHERE id=$35",
+      [@name_kana, @name, @email, @password, @campus, @school, @grade, @desired_school, @faculty, @department, @second_desired_school, @second_desired_faculty, @second_desired_department, @third_desired_school, @third_desired_faculty, @third_desired_department, @target_ct_reading, @target_ct_listening, @last_ct_reading, @last_ct_listening, @eiken_level, @desired_eiken_level, @strong_subject, @weak_subject, @hobby, @club, @desired_job, @dream, @resolution, @consult, @worry, @recommend_exam, @request_for_class, unique_filename, user_id]
+    )
+  end
 
   redirect '/mypage'
 end
@@ -517,10 +550,12 @@ end
 get '/chat_rooms/new' do
   # 他のユーザー一覧を取得（自分以外）
   #current_user_id = session[:user_id]
-  @users = client.exec_params(
-    "SELECT id, name FROM users WHERE name = $1",
-    ["須田丈夫"]
-  ).to_a
+  @users = DB_POOL.with do | conn |
+    conn.exec_params(
+      "SELECT id, name FROM users WHERE name = $1",
+      ["須田丈夫"]
+    ).to_a
+  end
 
   erb :new_chat_room
 end
@@ -530,18 +565,22 @@ post '/chat_rooms' do
   other_user_id = params[:user_id].to_i  # フォームから送られてくる相手ID
 
   # 新しいチャットルームを作成（個別チャットは名前なし）
-  result = client.exec_params(
-    "INSERT INTO chat_rooms (name) VALUES ($1) RETURNING id",
-    [nil]
-  )
-  chat_room_id = result[0]["id"]
+  result = DB_POOL.with do | conn |
+    conn.exec_params(
+      "INSERT INTO chat_rooms (name) VALUES ($1) RETURNING id",
+      [nil]
+    )
+    chat_room_id = result[0]["id"]
+  end
 
   # 参加者を登録（自分と相手）
-  [current_user_id, other_user_id].each do |uid|
-    client.exec_params(
-      "INSERT INTO chat_room_users (chat_room_id, user_id) VALUES ($1, $2)",
-      [chat_room_id, uid]
-    )
+  DB_POOL.with do | conn |
+    [current_user_id, other_user_id].each do |uid|
+      conn.exec_params(
+        "INSERT INTO chat_room_users (chat_room_id, user_id) VALUES ($1, $2)",
+        [chat_room_id, uid]
+      )
+    end
   end
 
   redirect "/chat_rooms/#{chat_room_id}"
@@ -553,12 +592,14 @@ get '/chat_rooms' do
   user_id = session[:user_id]
   
   # 自分が参加しているルームを取得
-  @chat_rooms = client.exec_params(
-    "SELECT cr.* FROM chat_rooms cr
-     JOIN chat_room_users cru ON cr.id = cru.chat_room_id
-     WHERE cru.user_id=$1",
-     [user_id]
-  ).to_a
+  @chat_rooms = DB_POOL.with do | conn |
+    conn.exec_params(
+      "SELECT cr.* FROM chat_rooms cr
+      JOIN chat_room_users cru ON cr.id = cru.chat_room_id
+      WHERE cru.user_id=$1",
+      [user_id]
+    ).to_a
+  end
 
   erb :chat_rooms
 end
@@ -568,16 +609,20 @@ get '/chat_rooms/:id' do
   chat_room_id = params[:id]
   
   # ルーム情報
-  @chat_room = client.exec_params("SELECT * FROM chat_rooms WHERE id=$1", [chat_room_id])[0]
+  @chat_room = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM chat_rooms WHERE id=$1", [chat_room_id])[0]
+  end
   
   # メッセージ一覧
-  @messages = client.exec_params(
-    "SELECT m.*, u.name FROM messages m
-     JOIN users u ON m.sender_id = u.id
-     WHERE chat_room_id=$1
-     ORDER BY created_at ASC",
-     [chat_room_id]
-  ).to_a
+  @messages = DB_POOL.with do | conn |
+    conn.exec_params(
+      "SELECT m.*, u.name FROM messages m
+      JOIN users u ON m.sender_id = u.id
+      WHERE chat_room_id=$1
+      ORDER BY created_at ASC",
+      [chat_room_id]
+    ).to_a
+  end
 
   erb :chat_room
 end
@@ -588,10 +633,12 @@ post '/chat_rooms/:id/messages' do
   sender_id = session[:user_id]
   content = params[:content]
 
-  client.exec_params(
-    "INSERT INTO messages (chat_room_id, sender_id, content) VALUES ($1, $2, $3)",
-    [chat_room_id, sender_id, content]
-  )
+  DB_POOL.with do | conn |
+    conn.exec_params(
+      "INSERT INTO messages (chat_room_id, sender_id, content) VALUES ($1, $2, $3)",
+      [chat_room_id, sender_id, content]
+    )
+  end
 
   redirect "/chat_rooms/#{chat_room_id}"
 end
@@ -614,32 +661,38 @@ post '/plan_new' do
   @purpose = params[:purpose]
   @status = params[:status]
   
-  client.exec_params(
-    "INSERT INTO plans (user_id, subject, material, start_date, end_date, laps, completed_laps, purpose, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-    [@user_id, @subject, @material, @start_date, @end_date, @laps, @completed_laps, @purpose, @status]
-  )
+  DB_POOL.with do | conn |
+    conn.exec_params(
+      "INSERT INTO plans (user_id, subject, material, start_date, end_date, laps, completed_laps, purpose, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+      [@user_id, @subject, @material, @start_date, @end_date, @laps, @completed_laps, @purpose, @status]
+    )
+  end
 
   redirect '/plans'
 end
 
 get '/plans' do
   @user_id = session[:user_id]
-  @plans = client.exec_params(
-    "SELECT * FROM plans
-      WHERE user_id = $1
-      ORDER BY created_at ASC",
-    [@user_id]
-  ).to_a
+  @plans = DB_POOL.with do | conn |
+    conn.exec_params(
+      "SELECT * FROM plans
+        WHERE user_id = $1
+        ORDER BY created_at ASC",
+      [@user_id]
+    ).to_a
+  end
 
   erb :plans
 end
 
 get '/plans/:id/edit' do
   @plan_id = params[:id].to_i
-  @plan = client.exec_params(
-    "SELECT * FROM plans WHERE id=$1",
-    [@plan_id]
-  ).first
+  @plan = DB_POOL.with do | conn |
+    conn.exec_params(
+      "SELECT * FROM plans WHERE id=$1",
+      [@plan_id]
+    ).first
+  end
 
   erb :plan_edit
 end
@@ -655,10 +708,12 @@ post '/plans/:id/edit' do
   @purpose = params[:purpose]
   @status = params[:status]
 
-  client.exec_params(
-    "UPDATE plans SET subject=$1, material=$2, start_date=$3, end_date=$4, laps=$5, completed_laps=$6, purpose=$7, status=$8 WHERE id=$9",
-    [@subject, @material, @start_date, @end_date, @laps, @completed_laps, @purpose, @status, @plan_id]
-  )
+  DB_POOL.with do | conn |
+    conn.exec_params(
+      "UPDATE plans SET subject=$1, material=$2, start_date=$3, end_date=$4, laps=$5, completed_laps=$6, purpose=$7, status=$8 WHERE id=$9",
+      [@subject, @material, @start_date, @end_date, @laps, @completed_laps, @purpose, @status, @plan_id]
+    )
+  end
 
   redirect '/plans'
 end
@@ -667,12 +722,14 @@ end
 
 get '/consults' do
   @user_id = session[:user_id]
-  @consults = client.exec_params(
+  @consults = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT * FROM consults
       WHERE user_id = $1
       ORDER BY date DESC",
     [@user_id]
   ).to_a
+  end
   erb :consults
 end
 
@@ -681,10 +738,12 @@ post '/consults/new' do
   @content = params[:content]
   @date = params[:date]
   
-  client.exec_params(
+  DB_POOL.with do | conn |
+    conn.exec_params(
     "INSERT INTO consults (user_id, content, date) VALUES ($1, $2, $3)",
     [@user_id, @content, @date]
   )
+  end
 
   redirect '/consults'
 end
@@ -692,12 +751,15 @@ end
 #勉強日記関係
 get '/diary' do
   @user_id = session[:user_id]
-  @diary_entries = client.exec_params(
+  @diary_entries = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT * FROM diary_entries
       WHERE user_id = $1
       ORDER BY date DESC",
     [@user_id]
   ).to_a
+  end
+
   erb :diary
 end
 
@@ -706,10 +768,12 @@ post '/diary/new' do
   @content = params[:content]
   @date = params[:date]
 
-  client.exec_params(
+  DB_POOL.with do | conn |
+    conn.exec_params(
     "INSERT INTO diary_entries (user_id, content, date) VALUES ($1, $2, $3)",
     [@user_id, @content, @date]
   )
+  end
 
   redirect '/diary'
 end
@@ -727,23 +791,29 @@ post '/recommends' do
 @g_lv = params[:grammar_level].to_i 
 @r_lv = params[:reading_level].to_i
 
- client.exec_params(
+ DB_POOL.with do | conn |
+    conn.exec_params(
    "INSERT INTO english_levels (user_id, word_level, grammar_level, reading_level) VALUES ($1, $2, $3, $4)",
    [@user_id, @w_lv, @g_lv, @r_lv]
  )
+ end
 
-@current_user = client.exec_params(
+@current_user = DB_POOL.with do | conn |
+    conn.exec_params(
   "SELECT * FROM users WHERE id=$1",
   [@user_id]
 ).first
+end
 halt 404 unless @current_user
 
-@recommended_books = client.exec_params( "SELECT * FROM english_books 
+@recommended_books = DB_POOL.with do | conn |
+    conn.exec_params( "SELECT * FROM english_books 
 WHERE (category = 'word' AND level = $1) 
 OR (category = 'grammar' AND level = $2) 
 OR (category = 'reading' AND level = $3) 
 ORDER BY category ASC, level DESC", 
 [@w_lv, @g_lv, @r_lv] ).to_a
+end
 
 erb :recommends_results 
 end
@@ -751,9 +821,11 @@ end
 # 英語参考書の良書一覧
 get '/recommends_list' do
   @user_id = session[:user_id]
-  @recommendations = client.exec_params(
+  @recommendations = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT * FROM english_books eb"
   ).to_a
+  end
 
   erb :recommends_list
 end
@@ -765,16 +837,20 @@ end
 
 post '/password_reset' do
   email = params[:email]
-  user = client.exec_params("SELECT * FROM users WHERE email = $1", [email]).first
+  user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE email = $1", [email]).first
+  end
 
   if user
     # 1. 使い捨てのランダムな「鍵（トークン）」を作る
     reset_token = SecureRandom.hex(32)
     # 2. データベースにトークンと有効期限（例: 1時間後）を保存する
-    client.exec_params(
-      "UPDATE users SET reset_token = $1, reset_token_expires_at = NOW() + INTERVAL '1 hour' WHERE id = $2",
-      [reset_token, user['id']]
-    )
+    DB_POOL.with do | conn |
+      conn.exec_params(
+        "UPDATE users SET reset_token = $1, reset_token_expires_at = NOW() + INTERVAL '1 hour' WHERE id = $2",
+        [reset_token, user['id']]
+      )
+    end
 
     # 3. ここでメールを送信する
     # パスワードリセット用リンクを含むメール
@@ -800,10 +876,12 @@ get '/password_reset/edit' do
   @token = params[:token]
   
   # DBからトークンが一致し、かつ期限（1時間）が切れていないユーザーを探す
-  user = client.exec_params(
+  user = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT * FROM users WHERE reset_token = $1 AND reset_token_expires_at > NOW()",
     [@token]
-  ).first
+    ).first
+  end
 
   if user
     erb :password_reset_edit # パスワード入力フォームを表示
@@ -836,11 +914,13 @@ post '/password_reset/update' do
   # 3. パスワードをハッシュ化して更新し、トークンを無効化する
   hashed_password = BCrypt::Password.create(password)
   
-  result = client.exec_params(
+  result = DB_POOL.with do | conn |
+    conn.exec_params(
     "UPDATE users SET password = $1, reset_token = NULL, reset_token_expires_at = NULL 
      WHERE reset_token = $2 AND reset_token_expires_at > NOW() RETURNING id",
     [hashed_password, token]
-  )
+    )
+  end
 
   if result.first
     @message = "パスワードを更新しました。新しいパスワードでログインしてください。"
@@ -856,7 +936,8 @@ get '/instructions' do
   user_id = session[:user_id]
 
   # テーブル名（instructions, reads）をすべて省略せずに記述したSQL
-  raw_data = client.exec_params("
+  raw_data = DB_POOL.with do | conn |
+    conn.exec_params("
     SELECT instructions.*, reads.read_at, reads.id AS read_record_id, instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at
     FROM instructions
     LEFT JOIN reads ON instructions.id = reads.instruction_id AND reads.user_id = $1
@@ -864,7 +945,8 @@ get '/instructions' do
     WHERE instructions.user_id = $1 OR instructions.user_id IS NULL
     ORDER BY instructions.created_at DESC",
     [user_id]
-  ).to_a
+    ).to_a
+  end
   
   # データを指示ごとにグルーピングする
   instructions_hash = {}
@@ -891,16 +973,20 @@ post '/instructions/:id/read' do
   instruction_id = params[:id]
   
   # データベースを更新
-  client.exec_params(
+  DB_POOL.with do | conn |
+    conn.exec_params(
     "INSERT INTO reads (instruction_id, user_id) VALUES ($1, $2)",
     [instruction_id, @user_id]
-  )
+    )
+  end
   
   redirect '/instructions'
 end
 
 get '/instructions/new' do
-  @users = client.exec_params("SELECT id, name FROM users ORDER BY name ASC").to_a
+  @users = DB_POOL.with do | conn |
+    conn.exec_params("SELECT id, name FROM users ORDER BY name ASC").to_a
+  end
   erb :make_instructions
 end
 
@@ -909,13 +995,17 @@ post '/instructions/new' do
   # 全員向け（NULL）の場合は、空文字ではなくnilにする処理
   target_user_id = (user_id == "" || user_id.nil?) ? nil : user_id
 
-client.exec_params(
+DB_POOL.with do | conn |
+    conn.exec_params(
     "INSERT INTO instructions (content, category, user_id, created_at, updated_at) 
      VALUES ($1, $2, $3, NOW(), NOW())",
     [params[:content], params[:category], target_user_id]
   )
+end
 
-receiver = client.exec_params("SELECT email, name FROM users WHERE id = $1", [target_user_id]).first
+receiver = DB_POOL.with do | conn |
+    conn.exec_params("SELECT email, name FROM users WHERE id = $1", [target_user_id]).first
+end
   
   if receiver && receiver['email']
     subject = "【CampusCore】新着メッセージが届きました"
@@ -939,19 +1029,25 @@ post '/instructions/:id/reply' do
   user_id = session[:user_id]
   content = params[:content]
 
-  client.exec_params(
+  DB_POOL.with do | conn |
+    conn.exec_params(
     "INSERT INTO instruction_replies (instruction_id, user_id, content, created_at) VALUES ($1, $2, $3, NOW())",
     [instruction_id, user_id, content]
   )
+  end
 
-  receiver = client.exec_params("SELECT email, name FROM users WHERE is_admin = $1", [true]).first
+  receiver = DB_POOL.with do | conn |
+    conn.exec_params("SELECT email, name FROM users WHERE is_admin = $1", [true]).first
+  end
 
-  reply_sender = client.exec_params(
+  reply_sender = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT name 
     FROM users u
     JOIN instruction_replies ir ON u.id = ir.user_id
     WHERE ir.instruction_id = $1",
     [instruction_id]).first
+  end
   
   if receiver && receiver['email']
     subject = "【CampusCore】#{reply_sender['name']}様への学習アドバイスに対する返信が届きました"
@@ -975,10 +1071,12 @@ end
 get '/mock_exams' do
 
   user_id = session[:user_id]
-  @mock_exams = client.exec_params(
+  @mock_exams = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT * FROM mock_exams WHERE user_id = $1 ORDER BY taken_at DESC",
     [user_id]
   ).to_a
+  end
   @success_message = session[:flash]
   session[:flash] = nil
 
@@ -1038,24 +1136,30 @@ post '/mock_exams/new' do
   end
 
 
-  client.exec_params(
+  DB_POOL.with do | conn |
+    conn.exec_params(
     "INSERT INTO mock_exams (title, exam_type, user_id, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at, mock_exam_result_image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)",
     [title, exam_type, user_id, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at, unique_filename]
   )
+  end
   redirect '/mock_exams'
 end
 
 # 模試結果を削除する
 post "/mock_exams/:id/delete" do
   exam_id = params[:id]
-  client.exec_params("DELETE FROM mock_exams WHERE id = $1", [exam_id])
+  DB_POOL.with do | conn |
+    conn.exec_params("DELETE FROM mock_exams WHERE id = $1", [exam_id])
+  end
   redirect '/mock_exams'
 end
 
 # 模試結果を編集する
 get '/mock_exams/:id/edit' do
   exam_id = params[:id]
-  @mock_exam = client.exec_params("SELECT * FROM mock_exams WHERE id = $1", [exam_id]).first
+  @mock_exam = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM mock_exams WHERE id = $1", [exam_id]).first
+  end
   erb :mock_exams_edit
 end
 
@@ -1109,10 +1213,12 @@ post '/mock_exams/:id/edit' do
     unique_filename = nil 
   end
 
-  client.exec_params(
+  DB_POOL.with do | conn |
+    conn.exec_params(
     "UPDATE mock_exams SET title=$1, exam_type=$2, english_r=$3, english_l=$4, math_1a=$5, math_2bc=$6, japanese=$7, physics_basic=$8, chemistry_basic=$9, biology_basic=$10, earth_science_basic=$11, physics=$12, chemistry=$13, biology=$14, earth_science=$15, world_history=$16, japanese_history=$17, geography=$18, civics_ethics=$19, civics_politics=$20, geography_basic=$21, history_basic=$22, civics_basic=$23, informatics=$24, taken_at=$25, mock_exam_result_image_url=$26 WHERE id=$27 AND user_id=$28",
     [title, exam_type, english_r, english_l, math_1a, math_2bc, japanese, physics_basic, chemistry_basic, biology_basic, earth_science_basic, physics, chemistry, biology, earth_science, world_history, japanese_history, geography, civics_ethics, civics_politics, geography_basic, history_basic, civics_basic, informatics, taken_at, unique_filename, exam_id, user_id]
   )
+  end
   session[:flash] = "模試・入試結果を更新しました。"
 
   redirect '/mock_exams'
@@ -1125,10 +1231,12 @@ end
 
 get '/quiz/:category' do
   user_id = session[:user_id]
-  @quiz = client.exec_params(
+  @quiz = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT * FROM english_questions WHERE category = $1 ORDER BY id ASC LIMIT 20 OFFSET 46",
     [params[:category]]
   ).to_a
+  end
 
   erb :quiz
 end
@@ -1148,10 +1256,12 @@ post '/quiz/submit' do
       session[:total_count] += 1
 
       # 1. データベースから、その問題の正解を取得する
-      question = client.exec_params(
+      question = DB_POOL.with do | conn |
+        conn.exec_params(
         "SELECT correct_option FROM english_questions WHERE id = $1", 
         [question_id]
-      ).first
+        ).first
+      end
 
       # 2. ユーザーの回答と正解が一致しているか判定し、true か false を決める
       is_correct = false
@@ -1161,11 +1271,13 @@ post '/quiz/submit' do
       end
 
       # 3. 「誰が」「どの問題に」「何と答え」「正解したか」を1回でインサートする
-      client.exec_params(
+      DB_POOL.with do | conn |
+        conn.exec_params(
         "INSERT INTO answer_logs (user_id, question_id, selected_option, is_correct, answered_at) 
          VALUES ($1, $2, $3, $4, $5)",
         [user_id, question_id, chosen_option, is_correct, current_time]
-      )
+        )
+      end
     end
   end
 
@@ -1182,37 +1294,45 @@ get '/quiz_result' do
 
   # 💡 対策: このテストで、このユーザーが「最後に回答した日時」を1件特定する
   # これによって、過去の同じテストの回答ログが混ざるのを防ぎます
-  last_attempt = client.exec_params(
-    "SELECT answered_at FROM answer_logs 
+  last_attempt = DB_POOL.with do | conn |
+    conn.exec_params(
+    "SELECT date_trunc('second', answered_at) AS last_sec FROM answer_logs 
      WHERE user_id = $1 AND test_id = $2 
      ORDER BY answered_at DESC LIMIT 1",
     [user_id, test_id]
-  ).first
+    ).first
+  end
 
   if last_attempt
     # 最新の受験日時をセット（ミリ秒のズレを防ぐため、安全に文字列やそのまま利用）
-    last_time = last_attempt["answered_at"]
+    last_time_sec = last_attempt["last_sec"]
   end
 
-  @correct_answers = client.exec_params(
-    "SELECT q.id, q.question_text, q.option_1, q.option_2, q.option_2, q.option_3, q.option_4, q.correct_option, al.selected_option, al.answered_at 
+  @correct_answers = DB_POOL.with do | conn |
+    conn.exec_params(
+    "SELECT q.id, q.question_text, q.option_1, q.option_2, q.option_3, q.option_4, q.correct_option, al.selected_option, al.answered_at 
      FROM answer_logs al
      JOIN english_questions q ON al.question_id = q.id
-     WHERE al.user_id = $1 AND al.is_correct = true AND al.test_id = $2 AND al.answered_at = $3
+     WHERE al.user_id = $1 AND al.is_correct = true AND al.test_id = $2 
+      AND date_trunc('second', al.answered_at) = date_trunc('second', $3::timestamp)
      ORDER BY al.answered_at DESC
     LIMIT $4",
-    [user_id, test_id, last_time, @correct_count]
-  ).to_a
+    [user_id, test_id, last_time_sec, @correct_count]
+    ).to_a
+  end
 
-  @wrong_answers = client.exec_params(
-    "SELECT q.id, q.question_text, q.option_1, q.option_2, q.option_2, q.option_3, q.option_4, q.correct_option, al.selected_option, al.answered_at 
+  @wrong_answers = DB_POOL.with do | conn |
+    conn.exec_params(
+    "SELECT q.id, q.question_text, q.option_1, q.option_2, q.option_3, q.option_4, q.correct_option, al.selected_option, al.answered_at 
      FROM answer_logs al
      JOIN english_questions q ON al.question_id = q.id
-     WHERE al.user_id = $1 AND al.is_correct = false AND al.test_id = $2 AND al.answered_at = $3
+     WHERE al.user_id = $1 AND al.is_correct = false AND al.test_id = $2 
+      AND date_trunc('second', al.answered_at) = date_trunc('second', $3::timestamp)
      ORDER BY al.answered_at DESC
      LIMIT $4",
-    [user_id, test_id, last_time, @wrong_count]
-  ).to_a
+    [user_id, test_id, last_time_sec, @wrong_count]
+    ).to_a
+  end
   
   @accuracy_rate = @total_count > 0 ? (@correct_count.to_f / @total_count * 100).round(2) : 0
 
@@ -1229,7 +1349,8 @@ end
 get '/user_all_quiz_results' do
   @user_id = session[:user_id]
 
-  @results = client.exec_params(
+  @results = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT q.category, q.question_text, q.option_1, q.option_2, q.option_3, q.option_4, 
     q.correct_option, al.selected_option, al.is_correct, al.answered_at, u.name 
      FROM answer_logs al
@@ -1238,7 +1359,8 @@ get '/user_all_quiz_results' do
      WHERE u.id = $1
      ORDER BY al.answered_at DESC",
     [@user_id]
-  ).to_a
+    ).to_a
+  end
 
   @correct_answers = @results.select { |r| r["is_correct"] == "t" }
   @wrong_answers = @results.select { |r| r["is_correct"] == "f" }
@@ -1256,7 +1378,8 @@ get '/user_all_quiz_results' do
 
   end
 
-  @test_results = client.exec_params(
+  @test_results = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT al.selected_option, al.is_correct, t.id AS test_id, t.name AS test_name, al.answered_at AS answered_at
     FROM answer_logs al
     JOIN users u ON al.user_id = u.id
@@ -1265,6 +1388,7 @@ get '/user_all_quiz_results' do
     ORDER BY al.answered_at DESC",
     [@user_id]
     )
+  end
 
     @test_stats = Hash.new { |hash, key| hash[key] = {correct:0, total:0}}
 
@@ -1282,17 +1406,21 @@ end
 #全生徒のオンラインテストの成績表示
 get '/users_quiz_result' do
   # 管理者かどうかのチェック
-  user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless user
   redirect '/' unless user["is_admin"].to_s == 't'
 
-  @results = client.exec_params(
+  @results = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT u.name AS user_name, u.id AS user_id, q.category, q.question_text, al.selected_option, al.is_correct, al.answered_at 
      FROM answer_logs al
      JOIN english_questions q ON al.question_id = q.id
      JOIN users u ON al.user_id = u.id
      ORDER BY al.answered_at DESC"
-  ).to_a
+    ).to_a
+  end
 
   # ユーザーごと、単元ごとの点数を集計するための空のハッシュを用意
   # 構造イメージ: { "ユーザー名" => { "単元名" => { correct: 0, total: 0 } } }
@@ -1311,13 +1439,15 @@ get '/users_quiz_result' do
     @user_stats[user][category][:correct] += 1 if is_correct
   end
 
-    @test_results = client.exec_params(
-    "SELECT u.name AS user_name, u.id AS user_id, al.selected_option, al.is_correct, t.id AS test_id, t.name AS test_name, al.answered_at AS answered_at
-    FROM answer_logs al
-    JOIN users u ON al.user_id = u.id
-    JOIN tests t ON t.id = al.test_id
-    ORDER BY al.answered_at DESC"
-    )
+    @test_results = DB_POOL.with do | conn |
+      conn.exec_params(
+      "SELECT u.name AS user_name, u.id AS user_id, al.selected_option, al.is_correct, t.id AS test_id, t.name AS test_name, al.answered_at AS answered_at
+      FROM answer_logs al
+      JOIN users u ON al.user_id = u.id
+      JOIN tests t ON t.id = al.test_id
+      ORDER BY al.answered_at DESC"
+      )
+    end
 
     @test_stats = Hash.new { |hash, key| hash[key] = Hash.new { |shash, skey| shash[skey] = {correct:0, total:0}}}
 
@@ -1339,11 +1469,14 @@ get '/users_quiz_result/:user_name' do
   @user_name = params[:user_name]
 
   # 管理者かどうかのチェック
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
-  @results = client.exec_params(
+  @results = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT q.category, q.question_text, q.option_1, q.option_2, q.option_3, q.option_4, q.correct_option, al.selected_option, al.is_correct, al.answered_at 
      FROM answer_logs al
      JOIN english_questions q ON al.question_id = q.id
@@ -1351,7 +1484,8 @@ get '/users_quiz_result/:user_name' do
      WHERE u.name = $1
      ORDER BY al.answered_at DESC",
     [@user_name]
-  ).to_a
+    ).to_a
+  end
 
   @correct_answers = @results.select { |r| r["is_correct"] == "t" }
   @wrong_answers = @results.select { |r| r["is_correct"] == "f" }
@@ -1370,20 +1504,28 @@ get '/admin/create-test' do
   @selected_category = params[:category_filter]
 
   #　カテゴリー（分野）一覧を取得する
-  categories = client.exec_params("SELECT category_ja FROM test_categories;")
+  categories = DB_POOL.with do | conn |
+    conn.exec_params("SELECT category_ja FROM test_categories;")
+  end
   @categories = categories.map { |row| row['category_ja'] }
 
   # 全ての問題をデータベースから取得
   if @selected_category.nil? || @selected_category.empty?
-    @questions = client.exec_params(
+    @questions = DB_POOL.with do | conn |
+    conn.exec_params(
       "SELECT id, category, question_text FROM english_questions ORDER BY category, id ASC"
-    ).to_a
+      ).to_a
+    end
   else
-    @category_en_result = client.exec_params("SELECT category_en FROM test_categories WHERE category_ja = $1", [@selected_category]).first
-    @questions = client.exec_params(
+    @category_en_result = DB_POOL.with do | conn |
+      conn.exec_params("SELECT category_en FROM test_categories WHERE category_ja = $1", [@selected_category]).first
+    end
+    @questions = DB_POOL.with do | conn |
+      conn.exec_params(
       "SELECT id, category, question_text FROM english_questions WHERE category = $1 ORDER BY id ASC",
       [@category_en_result['category_en']]
-    ).to_a
+      ).to_a
+    end
   end
 
   erb :admin_create_test
@@ -1398,16 +1540,24 @@ post '/admin/save-test' do
     @error = "問題が選択されていません。最低1問以上選択してください。"
     # erbに必要な変数を全て設定する
     @selected_category = params[:category_filter]
-    categories = client.exec_params("SELECT category_ja FROM test_categories;")
+    categories = DB_POOL.with do | conn |
+      conn.exec_params("SELECT category_ja FROM test_categories;")
+    end
     @categories = categories.map { |row| row['category_ja'] }
-    @questions = client.exec_params("SELECT id, category, question_text FROM english_questions ORDER BY category, id ASC").to_a
+    @questions = DB_POOL.with do | conn |
+      conn.exec_params("SELECT id, category, question_text FROM english_questions ORDER BY category, id ASC").to_a
+    end
     return erb :admin_create_test
   end
 
   test_name = params[:test_name]
-  test_id = client.exec_params("INSERT INTO tests (name) VALUES ($1) RETURNING id", [test_name])[0]["id"]
+  test_id = DB_POOL.with do | conn |
+    conn.exec_params("INSERT INTO tests (name) VALUES ($1) RETURNING id", [test_name])[0]["id"]
+  end
   selected_ids.each do |q_id|
-    client.exec_params("INSERT INTO test_questions (test_id, question_id) VALUES ($1, $2)", [test_id, q_id])
+    DB_POOL.with do | conn |
+      conn.exec_params("INSERT INTO test_questions (test_id, question_id) VALUES ($1, $2)", [test_id, q_id])
+    end
   end
 
   # ✅ ここで、セッションにメッセージを代入する
@@ -1419,16 +1569,21 @@ end
 # admin_create_testで作成したテストの問題を受け取って表示する画面
 get '/english_test/:id' do
   test_id = params[:id]
+  session[:test_id] = test_id
 
-  @test = client.exec_params("SELECT * FROM tests WHERE id=$1", [test_id]).first
+  @test = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM tests WHERE id=$1", [test_id]).first
+  end
   halt 404 unless @test
 
-  @questions = client.exec_params(
+  @questions = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT q.* FROM english_questions q
      JOIN test_questions tq ON q.id = tq.question_id
      WHERE tq.test_id = $1",
      [test_id]
-  ).to_a
+    ).to_a
+  end
 
   erb :english_test
 end
@@ -1440,15 +1595,19 @@ post '/english_test/:id/submit' do
   user_answers = params["answers"]
   @correct_count = 0
 
+  current_time = Time.now  # 💡 全問で共通の時刻オブジェクトを作成
+
   if user_answers
     user_answers.each do |_index, data|
       question_id = data["id"].to_i
       chosen_option = data["chosen"].to_i
 
-      question = client.exec_params(
+      question = DB_POOL.with do | conn |
+        conn.exec_params(
         "SELECT correct_option FROM english_questions WHERE id = $1", 
         [question_id]
-      ).first
+        ).first
+      end
 
       is_correct = false
       if question && question["correct_option"].to_i == chosen_option
@@ -1456,15 +1615,20 @@ post '/english_test/:id/submit' do
         @correct_count += 1
       end
 
-      client.exec_params(
+      DB_POOL.with do | conn |
+        conn.exec_params(
         "INSERT INTO answer_logs (user_id, question_id, selected_option, is_correct, answered_at, test_id) 
-         VALUES ($1, $2, $3, $4, NOW(), $5)",
-        [user_id, question_id, chosen_option, is_correct, test_id]
-      )
+         VALUES ($1, $2, $3, $4, $5, $6)",
+        [user_id, question_id, chosen_option, is_correct, current_time, test_id]
+        )
+      end
     end
   end
 
+
   session[:test_id] = test_id # 結果画面でどのテストの結果かを識別するためにセッションに保存
+  session[:correct_count] = @correct_count
+  session[:total_count] = user_answers ? user_answers.length.to_i : 0
   redirect '/quiz_result'
 end
 
@@ -1472,12 +1636,15 @@ end
 # 問題ごとの正答率を表示する画面（正答率の降順）
 get '/question_stats' do
   # 管理者かどうかのチェック
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
   # 【修正】SQL側で正答率（accuracy_rate）を計算し、降順（DESC）で並び替える
-  @question_stats = client.exec_params("
+  @question_stats = DB_POOL.with do | conn |
+    conn.exec_params("
     SELECT 
       q.id, 
       q.category, 
@@ -1502,7 +1669,8 @@ get '/question_stats' do
     
     -- 💡 正答率の降順（大きい順）、同じ正答率ならカテゴリ・ID順
     ORDER BY accuracy_rate DESC, q.category ASC, q.id ASC
-  ").to_a
+    ").to_a
+  end
 
   erb :question_stats
 end
@@ -1510,14 +1678,19 @@ end
 # 問題の単元（category）ごとの正答率を表示する画面（正答率の降順）
 get '/question_stats_by_category' do
   # 管理者かどうかのチェック
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
-  @question_categories = client.exec_params("SELECT DISTINCT category FROM english_questions ORDER BY category ASC").to_a
+  @question_categories = DB_POOL.with do | conn |
+    conn.exec_params("SELECT DISTINCT category FROM english_questions ORDER BY category ASC").to_a
+  end
 
   # 【修正】SQL側で正答率（accuracy_rate）を計算し、降順（DESC）で並び替える
-  @question_stats = client.exec_params("
+  @question_stats = DB_POOL.with do | conn |
+    conn.exec_params("
     SELECT 
       q.id, 
       q.category, 
@@ -1542,7 +1715,8 @@ get '/question_stats_by_category' do
     
     -- 💡 正答率の降順（大きい順）、同じ正答率ならカテゴリ・ID順
     ORDER BY q.category ASC, accuracy_rate DESC, q.id ASC
-  ").to_a
+    ").to_a
+  end
 
   erb :question_stats_by_category
 end
@@ -1552,11 +1726,15 @@ get '/created_tests' do
   user_id = session[:user_id]
 
   # 管理者かどうかのチェック
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [user_id]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [user_id]).first
+  end
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
-  @tests = client.exec_params("SELECT * FROM tests ORDER BY created_at DESC").to_a
+  @tests = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM tests ORDER BY created_at DESC").to_a
+  end
 
   erb :created_tests
 end
@@ -1567,28 +1745,34 @@ post '/add_to_list' do
   checkbox_params = params[:is_added_to_list] || [] # チェックされていない場合は空配列を代入
   selected_ids = checkbox_params.map(&:to_i)
 
-  all_ids = client.exec_params(
+  all_ids = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT id FROM tests"
-  ).map{ |row| row['id'].to_i }
+    ).map{ |row| row['id'].to_i }
+  end
 
   unselected_ids = all_ids - selected_ids
 
   # p selected_ids # ➔ ターミナルでどんな配列が届いているか確認できる
 
   # 2. 配列の中身をループ処理して、データベースを1件ずつ TRUE に更新する
-  selected_ids.each do |test_id|
-    client.exec_params(
-      "UPDATE tests SET is_added_to_list = TRUE WHERE id = $1;",
-      [test_id]
-    )
+  DB_POOL.with do | conn |
+    selected_ids.each do |test_id|
+      conn.exec_params(
+        "UPDATE tests SET is_added_to_list = TRUE WHERE id = $1;",
+        [test_id]
+      )
+    end
   end
 
   # 3. 配列の中身をループ処理して、選択されていないテストを1件ずつ FALSE に更新する
-  unselected_ids.each do |test_id|
-    client.exec_params(
-      "UPDATE tests SET is_added_to_list = FALSE WHERE id = $1;",
-      [test_id]
-    )
+  DB_POOL.with do | conn |
+    unselected_ids.each do |test_id|
+      conn.exec_params(
+        "UPDATE tests SET is_added_to_list = FALSE WHERE id = $1;",
+        [test_id]
+      )
+    end
   end
 
   # 4. 処理が終わったらメッセージをセットして元のページに戻る
@@ -1601,14 +1785,16 @@ end
 get '/listed_tests' do
   user_id = session[:user_id]
 
-  @tests = client.exec_params(
+  @tests = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT tests.id AS test_id, tests.name AS test_name, tests.created_at AS created_at, test_questions.question_id AS question_id, english_questions.question_text AS question_text,
     english_questions.option_1 AS option_1, english_questions.option_2 AS option_2, english_questions.option_3 AS option_3, english_questions.option_4 AS option_4, english_questions.correct_option AS correct_option
     FROM tests
     JOIN test_questions ON tests.id = test_questions.test_id
     JOIN english_questions ON test_questions.question_id = english_questions.id
     WHERE tests.is_added_to_list = TRUE"
-  )
+    )
+  end
 
   @test_questions = {}
 
@@ -1642,9 +1828,11 @@ post '/listed_tests/submit' do
   test_id = params["test_id"]
   user_answers = params["answers"]
 
-  test_name = client.exec_params(
+  test_name = DB_POOL.with do | conn |
+    conn.exec_params(
     "select name from tests where id = $1", [test_id]
-  ).first
+    ).first
+  end
 
   session[:test_name] = test_name["name"]
 
@@ -1659,9 +1847,11 @@ post '/listed_tests/submit' do
 
       session[:total_count] += 1
 
-      correct_answer = client.exec_params(
-        "select correct_option from english_questions where id = $1", [question_id.to_i]
-      ).first["correct_option"].to_i
+      correct_answer = DB_POOL.with do | conn |
+        conn.exec_params(
+          "select correct_option from english_questions where id = $1", [question_id.to_i]
+        ).first["correct_option"].to_i
+      end
 
       is_correct = false
       if correct_answer == answer.to_i
@@ -1669,11 +1859,13 @@ post '/listed_tests/submit' do
         session[:correct_count] += 1
       end
       
-      client.exec_params(
-        "INSERT INTO answer_logs (user_id, question_id, selected_option, is_correct, answered_at, test_id) 
-         VALUES ($1, $2, $3, $4, $5, $6)",
-        [user_id, question_id.to_i, answer.to_i, is_correct, current_time, test_id]
-      )
+      DB_POOL.with do | conn |
+          conn.exec_params(
+          "INSERT INTO answer_logs (user_id, question_id, selected_option, is_correct, answered_at, test_id) 
+          VALUES ($1, $2, $3, $4, $5, $6)",
+          [user_id, question_id.to_i, answer.to_i, is_correct, current_time, test_id]
+          )
+      end
     end
   end
 
@@ -1828,10 +2020,12 @@ post '/target_schools' do
   
   if deviation
     # データベース（PostgreSQL）に志望校と取得した偏差値を保存
-    client.exec_params(
-      "INSERT INTO target_schools (university_name, faculty_name, department_name, deviation_value, user_id) VALUES ($1, $2, $3, $4, $5)",
-      [univ_name, faculty_name, department_name, deviation.to_f, @user_id]
-    )
+    DB_POOL.with do | conn |
+      conn.exec_params(
+        "INSERT INTO target_schools (university_name, faculty_name, department_name, deviation_value, user_id) VALUES ($1, $2, $3, $4, $5)",
+        [univ_name, faculty_name, department_name, deviation.to_f, @user_id]
+      )
+    end
     session[:success] = "志望校と偏差値（#{deviation}）を登録しました！"
   else
     session[:error] = "偏差値の取得に失敗しました。学部名を確認してください。"
@@ -1854,10 +2048,12 @@ post '/target_schools_border' do
   
   if border
     # データベース（PostgreSQL）に志望校と取得したボーダーを保存
-    client.exec_params(
+    DB_POOL.with do | conn |
+      conn.exec_params(
       "INSERT INTO target_schools (university_name, faculty_name, department_name, border_value, user_id) VALUES ($1, $2, $3, $4, $5)",
       [univ_name, faculty_name, department_name, border.to_f, @user_id]
-    )
+      )
+    end
     session[:success] = "志望校とボーダー（#{border}）を登録しました！"
   else
     session[:error] = "ボーダーの取得に失敗しました。学部名を確認してください。"
@@ -1877,10 +2073,12 @@ post '/target_schools_id' do
   
   if univ_id
     # データベース（PostgreSQL）に志望校と大学IDを保存
-    client.exec_params(
+    DB_POOL.with do | conn |
+      conn.exec_params(
       "INSERT INTO target_schools (university_name, faculty_name, department_name, passnavi_univ_id, user_id) VALUES ($1, $2, $3, $4, $5)",
       [univ_name, faculty_name, department_name, univ_id, @user_id]
-    )
+      )
+    end
     session[:success] = "志望校と大学ID（#{univ_id}）を登録しました！"
   else
     session[:error] = "大学IDの取得に失敗しました。"
@@ -1995,19 +2193,23 @@ post '/essay_writing' do
     # 6. AIによる添削結果をessaysテーブルとessay_grammarsテーブルに格納する。また、保存と同時に、生成されたばかりの id をその場で取得する。
     if unique_filename
     
-      essay_result = client.exec_params(
+      essay_result = DB_POOL.with do | conn |
+        conn.exec_params(
         "INSERT INTO essays (essay_image, question, user_id, title, ocr_text, corrected_text, score, feedback) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
         [unique_filename, @question, @user_id, @title, detected_text, @result["corrected_text"], @result["score"], @result["feedback"]]
-      )
+        )
+      end
       # 配列（ハッシュの配列）として結果が返ってくるので、最初の1件の "id" を取り出す
       essay_id = essay_result.first["id"].to_i
 
       if @result["grammars"] && @result["grammars"].is_a?(Array)
         @result["grammars"].each do |grammar|
-          client.exec_params(
+          DB_POOL.with do | conn |
+            conn.exec_params(
             "INSERT INTO essay_grammars (essay_id, mistake, reason) VALUES ($1, $2, $3)",
             [essay_id, grammar["mistake"], grammar["reason"]]
-          )
+            )
+          end
         end
       end
       session[:success] = "自由英作文の画像をアップロードしました。文字の自動解析も完了しました！"
@@ -2096,19 +2298,23 @@ post '/form_input_essay_writing' do
     puts @result
 
     # 6. AIによる添削結果をessaysテーブルとessay_grammarsテーブルに格納する。また、保存と同時に、生成されたばかりの id をその場で取得する。
-    essay_result = client.exec_params(
+    essay_result = DB_POOL.with do | conn |
+      conn.exec_params(
       "INSERT INTO essays (question, user_id, title, form_input_text, corrected_text, score, feedback) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
       [@question, @user_id, @title, form_input_text, @result["corrected_text"], @result["score"], @result["feedback"]]
-    )
+      )
+    end
     # 配列（ハッシュの配列）として結果が返ってくるので、最初の1件の "id" を取り出す
     essay_id = essay_result.first["id"].to_i
 
     if @result["grammars"] && @result["grammars"].is_a?(Array)
       @result["grammars"].each do |grammar|
-        client.exec_params(
+        DB_POOL.with do | conn |
+          conn.exec_params(
           "INSERT INTO essay_grammars (essay_id, mistake, reason) VALUES ($1, $2, $3)",
           [essay_id, grammar["mistake"], grammar["reason"]]
-        )
+          )
+        end
       end
     end
 
@@ -2128,11 +2334,14 @@ end
 # 全ユーザーの自由英作文の答案と添削結果を一覧表示する画面
 get '/users_essay_results' do
   # 管理者かどうかのチェック
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
-  raw_results = client.exec_params(
+  raw_results = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT e.id, e.question, e.title, e.essay_image, e.form_input_text, 
     e.corrected_text, e.score, e.feedback, u.name AS user_name, e.created_at, e.human_feedback,
     eg.mistake, eg.reason
@@ -2140,7 +2349,8 @@ get '/users_essay_results' do
      JOIN users u ON e.user_id = u.id
      JOIN essay_grammars eg ON e.id = eg.essay_id
      ORDER BY e.created_at DESC"
-  ).to_a
+    ).to_a
+  end
 
   @grouped_essays = raw_results.group_by { |row| row["id"] }
 
@@ -2156,15 +2366,19 @@ post '/users_essay_results/:essay_id/feedback' do
   human_feedback = params[:human_feedback]
 
   # 管理者かどうかのチェック
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
   # essaysテーブルのhuman_feedbackカラムを更新する
-  client.exec_params(
+  DB_POOL.with do | conn |
+    conn.exec_params(
     "UPDATE essays SET human_feedback = $1 WHERE id = $2",
     [human_feedback, essay_id]
-  )
+    )
+  end
 
   session[:success] = "添削メッセージを更新しました。"
   redirect '/users_essay_results'
@@ -2174,7 +2388,8 @@ end
 get '/my_essay_results' do
   @user_id = session[:user_id]
 
-  @results = client.exec_params(
+  @results = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT e.id, e.question, e.title, e.essay_image, e.form_input_text, 
     e.corrected_text, e.score, e.feedback, u.name AS user_name, e.created_at, e.human_feedback,
     eg.mistake, eg.reason
@@ -2184,7 +2399,8 @@ get '/my_essay_results' do
      WHERE u.id = $1
      ORDER BY e.created_at DESC",
     [@user_id]
-  ).to_a
+    ).to_a
+  end
 
   @grouped_essays = @results.group_by { |row| row["id"] }
 
@@ -2266,19 +2482,23 @@ post '/english_to_japanese_translation' do
     puts @result
 
     # 6. AIによる添削結果をtranslationsテーブルとtranslation_mistakesテーブルに格納する。また、保存と同時に、生成されたばかりの id をその場で取得する。
-    translation_result = client.exec_params(
+    translation_result = DB_POOL.with do | conn |
+      conn.exec_params(
       "INSERT INTO translations (user_id, title, english_text, japanese_translation, corrected_text, score, feedback) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
       [@user_id, @title, english_text, e_to_j_translation, @result["corrected_text"], @result["score"], @result["feedback"]]
-    )
+      )
+    end
     # 配列（ハッシュの配列）として結果が返ってくるので、最初の1件の "id" を取り出す
     translation_id = translation_result.first["id"].to_i
 
     if @result["mistakes"] && @result["mistakes"].is_a?(Array)
       @result["mistakes"].each do |mistake|
-        client.exec_params(
+        DB_POOL.with do | conn |
+          conn.exec_params(
           "INSERT INTO translation_mistakes (translation_id, mistake_content, reason) VALUES ($1, $2, $3)",
           [translation_id, mistake["mistake_content"], mistake["reason"]]
-        )
+          )
+        end
       end
     end
 
@@ -2298,11 +2518,14 @@ end
 # 全ユーザーの英文和訳の答案と添削結果を一覧表示する画面
 get '/users_translation_results' do
   # 管理者かどうかのチェック
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
-  raw_results = client.exec_params(
+  raw_results = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT t.id, t.english_text, t.title, t.japanese_translation,
     t.corrected_text, t.score, t.feedback, u.name AS user_name, t.created_at, t.human_feedback,
     tm.mistake, tm.reason
@@ -2310,7 +2533,8 @@ get '/users_translation_results' do
      JOIN users u ON t.user_id = u.id
      JOIN translation_mistakes tm ON t.id = tm.translation_id
      ORDER BY t.created_at DESC"
-  ).to_a
+    ).to_a
+  end
 
   @grouped_translations = raw_results.group_by { |row| row["id"] }
 
@@ -2326,15 +2550,19 @@ post '/users_translation_results/:translation_id/feedback' do
   human_feedback = params[:human_feedback]
 
   # 管理者かどうかのチェック
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
   # translationsテーブルのhuman_feedbackカラムを更新する
-  client.exec_params(
+  DB_POOL.with do | conn |
+    conn.exec_params(
     "UPDATE translations SET human_feedback = $1 WHERE id = $2",
     [human_feedback, translation_id]
-  )
+    )
+  end
 
   session[:success] = "添削メッセージを更新しました。"
   redirect '/users_translation_results'
@@ -2344,7 +2572,8 @@ end
 get '/my_translation_results' do
   @user_id = session[:user_id]
 
-  @results = client.exec_params(
+  @results = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT t.id, t.english_text, t.title, t.japanese_translation, 
     t.corrected_text, t.score, t.feedback, u.name AS user_name, t.created_at, t.human_feedback,
     tm.mistake, tm.reason
@@ -2354,7 +2583,8 @@ get '/my_translation_results' do
      WHERE u.id = $1
      ORDER BY t.created_at DESC",
     [@user_id]
-  ).to_a
+    ).to_a
+  end
 
   @grouped_translations = @results.group_by { |row| row["id"] }
 
@@ -2367,7 +2597,9 @@ end
 get '/create_interview_slots' do
   @user_id = session[:user_id]
 
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  end
   halt 404 unless current_user
   if current_user["is_admin"].to_s != 't'
     redirect '/'
@@ -2381,7 +2613,9 @@ post '/create_interview_slots' do
   @user_id = session[:user_id]
   campus = params[:campus]
 
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  end
   halt 404 unless current_user
   if current_user["is_admin"].to_s != 't'
     redirect '/'
@@ -2390,13 +2624,15 @@ post '/create_interview_slots' do
 interview_slots = params[:interview_slot].split("\n").map(&:strip).reject(&:empty?)
 
   # 面談枠をデータベースに保存
-  client.transaction do |conn|
-    interview_slots.each do |slot|
-      conn.exec_params(
-        "INSERT INTO interview_slots (interview_slot, campus) VALUES ($1, $2)
-        ON CONFLICT ON CONSTRAINT unique_interview_slot DO NOTHING",
-        [slot, campus]
-      )
+  DB_POOL.with do | conn |
+    conn.transaction do |conn|
+      interview_slots.each do |slot|
+        conn.exec_params(
+          "INSERT INTO interview_slots (interview_slot, campus) VALUES ($1, $2)
+          ON CONFLICT ON CONSTRAINT unique_interview_slot DO NOTHING",
+          [slot, campus]
+          )
+      end
     end
   end
 
@@ -2410,17 +2646,21 @@ get '/interview_reservations' do
   @user_id = session[:user_id]
 
   # 面談枠をデータベースから取得（予約済みのものは除外）
-  @available_slots = client.exec_params(
+  @available_slots = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT * FROM interview_slots WHERE user_id IS NULL ORDER BY id ASC"
-  ).to_a
+    ).to_a
+  end
 
   @grouped_slots = @available_slots.group_by { |slot| slot["campus"] }
 
   # 自分の面談予約状況を取得
-  @my_reservations = client.exec_params(
+  @my_reservations = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT * FROM interview_slots WHERE user_id = $1 ORDER BY id ASC",
     [@user_id]
-  ).to_a
+    ).to_a
+  end
 
 
   erb :interview_reservations
@@ -2432,10 +2672,12 @@ post '/interview_reservations' do
   slot_id = params[:id]
 
   # 面談枠を予約（user_idを更新）
-  result = client.exec_params(
+  result = DB_POOL.with do | conn |
+    conn.exec_params(
     "UPDATE interview_slots SET user_id = $1 WHERE id = $2 AND user_id IS NULL",
     [@user_id, slot_id]
-  )
+    )
+  end
 
   if result.cmd_tuples > 0
     session[:success] = "面談を予約しました。"
@@ -2452,10 +2694,12 @@ post '/interview_reservations/cancel' do
   slot_id = params[:id]
 
   # 面談枠の予約をキャンセル（user_idをNULLに更新）
-  result = client.exec_params(
+  result = DB_POOL.with do | conn |
+    conn.exec_params(
     "UPDATE interview_slots SET user_id = NULL WHERE id = $1 AND user_id = $2",
     [slot_id, @user_id]
-  )
+    )
+  end
 
   if result.cmd_tuples > 0
     session[:cancel_success] = "面談の予約をキャンセルしました。"
@@ -2471,19 +2715,23 @@ end
 get '/admin_interview_reservations' do
   @user_id = session[:user_id]
 
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  end
   halt 404 unless current_user
   if current_user["is_admin"].to_s != 't'
     redirect '/'
   end
 
   # 全ユーザーの面談予約状況を取得
-  @all_reservations = client.exec_params(
+  @all_reservations = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT slots.id, slots.interview_slot, slots.campus, u.name AS user_name
      FROM interview_slots slots
      LEFT JOIN users u ON slots.user_id = u.id
      ORDER BY slots.id ASC"
-  ).to_a
+    ).to_a
+  end
 
   @grouped_reservations = @all_reservations.group_by { |slot| slot["campus"] }
 
@@ -2495,15 +2743,19 @@ end
 get '/create_teacher_announcement' do
   @user_id = session[:user_id]
 
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  end
   halt 404 unless current_user
   if current_user["is_admin"].to_s != 't'
     redirect '/'
   end
 
-  @announcements = client.exec_params(
+  @announcements = DB_POOL.with do | conn |
+    conn.exec_params(
     "SELECT * FROM teacher_announcements ORDER BY created_at DESC"
-  ).to_a
+    ).to_a
+  end
 
   erb :create_teacher_announcement
 end
@@ -2514,23 +2766,23 @@ post '/create_teacher_announcement' do
   title = params[:title]
   content = params[:content]
 
-  current_user = client.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  end
   halt 404 unless current_user
   if current_user["is_admin"].to_s != 't'
     redirect '/'
   end
 
   # お知らせをデータベースに保存
-  client.exec_params(
+  DB_POOL.with do | conn |
+    conn.exec_params(
     "INSERT INTO teacher_announcements (title, content, user_id) VALUES ($1, $2, $3)",
     [title, content, @user_id]
-  )
+    )
+  end
 
   session[:success] = "お知らせを登録しました。"
   redirect '/create_teacher_announcement'
 end
-
-
-
-
 

@@ -277,6 +277,7 @@ PLATFORMS
 DEPENDENCIES
   bcrypt
   cloudinary
+  connection_pool
   dotenv
   google-cloud-vision
   irb
