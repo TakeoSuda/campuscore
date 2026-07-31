@@ -174,6 +174,9 @@ post '/api/quiz_results' do
   end
 end
 
+# 分割したルーティングファイルの読み込み
+require_relative 'routes/essays'
+
 # --- ここから下に get '/' do ... などのルーティングを続ける ---
 
 get '/' do

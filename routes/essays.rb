@@ -40,17 +40,39 @@ post '/essay_writing_graph' do
     あなたは親切で優秀な英語のプロ講師です。
     ユーザーが書いた「グラフ型の自由英作文」の答案を添削してください。
     添付されたグラフ画像や設問内容と、ユーザーの英作文の内容が一致しているか（グラフのデータを正しく読み取って英作文に反映できているか）も含めて採点してください。
+
+    必ず指定された以下のJSON形式でのみ返答してください。余計なテキストは一切含めないでください。
     
     {
       "original_text": "元の文章",
       "corrected_text": "文法や表現を綺麗に修正した後の完璧な文章",
-      "score": 100点満点中の点数(数値のみ),
-      "feedback": "全体的な講評や、もっと良くなるためのアドバイス（日本語）",
+      "score": 100点満点中の点数(数値のみ。グラフの読み取りの正確さも考慮すること),
+      "feedback": "全体的な講評や、グラフの読み取りに関するアドバイス、もっと良くなるための指導（日本語）",
       "grammars": [
         {"mistake": "間違っていた部分や不自然な表現", "reason": "なぜ間違っているか、どう直すべきかの丁寧な解説（日本語）"}
       ]
     }
   TEXT
+
+
+  # --- ユーザーメッセージの内容（テキスト＋画像）を構築 ---
+  user_content = [
+    {
+      type: "text",
+      text: "【質問/お題】\n#{@question}\n\n【ユーザーが書いた英作文】\n#{@answer}\n\n上記の英作文が、添付されたグラフ画像の内容を正確に描写・説明できているかも含めて添削してください。"
+    }
+  ]
+
+  # 画像が存在する場合は、image_url を追加する
+  if unique_filename
+    user_content << {
+      type: "image_url",
+      image_url: {
+        url: unique_filename
+      }
+    }
+  end
+
 
   begin
     # 3. OpenAIのAPIへリクエストを送信
@@ -63,8 +85,8 @@ post '/essay_writing_graph' do
           { 
             role: "user", 
             # 💡 question と detected_text を分かりやすくドッキングさせて渡す
-            content: "【質問/お題】\n#{@question}\n\n【ユーザーが書いた英作文】\n#{@answer}" 
-          }
+            content: user_content
+          } #　配列形式でテキストと画像を渡す
         ],
         temperature: 0.3 # 回答のブレを抑え、安定した添削を行わせる設定
       }
@@ -90,8 +112,8 @@ post '/essay_writing_graph' do
       essay_id = essay_result.first["id"].to_i
 
       if @result["grammars"] && @result["grammars"].is_a?(Array)
-        @result["grammars"].each do |grammar|
-          DB_POOL.with do | conn |
+        DB_POOL.with do | conn |  
+          @result["grammars"].each do |grammar|
             conn.exec_params(
             "INSERT INTO essay_grammars_graph (essay_id_graph, mistake, reason) VALUES ($1, $2, $3)",
             [essay_id, grammar["mistake"], grammar["reason"]]
@@ -99,10 +121,10 @@ post '/essay_writing_graph' do
           end
         end
       end
-      session[:success] = "グラフ型自由英作文の問題画像をアップロードしました！"
+      session[:success] = "グラフ型自由英作文の問題画像をアップロードし、採点が完了しました！"
 
     else
-      session[:error] = "処理に失敗しました。"
+      session[:error] = "画像のアップロードに失敗しました。"
     end
 
 
