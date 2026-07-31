@@ -404,6 +404,7 @@ get '/mypage' do
 
 # ここで @is_admin に真偽値を振っておくと、erbで使いやすくなる
   @is_admin = (@user['is_admin'] == 't' || @user['is_admin'] == true)
+  session[:is_admin] = @is_admin
 
   # 講師からのお知らせを新着順に取得
   @teacher_announcements = DB_POOL.with do | conn |
@@ -412,7 +413,26 @@ get '/mypage' do
     ).to_a
   end
 
+  # 万が一 nil が入っても大丈夫なように安全策をとる場合は以下のように書くこともできる
+  @teacher_announcements ||= []
+
   erb :mypage
+end
+
+post "/mypage/teacher_announcement/:id/delete" do
+  # 💡 ログインチェック & 管理者権限チェック（権限がない場合は拒否）
+  unless session[:user_id] && session[:is_admin] # ※管理者フラグのセッション名に合わせて変更してください
+    halt 403, "権限がありません"
+  end
+
+  teacher_announcement_id = params[:id]
+  DB_POOL.with do | conn |
+    conn.exec_params(
+      "DELETE FROM teacher_announcements WHERE id = $1", [teacher_announcement_id]
+    )
+  end
+
+  redirect '/mypage'
 end
 
 get "/mypage_edit" do

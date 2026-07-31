@@ -13,6 +13,14 @@
     </span>
   </h2>
 
+
+  <% if @teacher_announcements == [] %>
+    <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 8px;">
+      <p style="margin: 6px 0 0; color: #475569; font-weight: bold;">
+        講師からのお知らせはありません。
+      </p>
+    </div>
+  <% end %>
   <% @teacher_announcements.each do |a| %>
     <div style="margin-top: 12px; padding: 12px; background: white; border-radius: 8px;">
       <h3 style="margin:0; color: #1e3a8a;">
@@ -22,6 +30,12 @@
         <%= a["content"] %>
       </p>
     </div>
+    <% if @is_admin %>
+    <form action="/mypage/teacher_announcement/<%= a['id'] %>/delete" method="post" onsubmit="return confirm('本当に削除しますか？');" 
+    style="margin-top: 10px;">
+      <input class="btn" type="submit" value="このお知らせを削除する" style="color: black; padding: 10px; background: white; border-radius: 8px;">
+    </form>
+    <% end %>
   <% end %>
 
 </section>
