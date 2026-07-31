@@ -1567,14 +1567,17 @@ post '/admin/save-test' do
 end
 
 # admin_create_testで作成したテストの問題を受け取って表示する画面
-get '/english_test/:id' do
-  test_id = params[:id]
-  session[:test_id] = test_id
+get '/english_test/:test_name' do
+  @test_name = params[:test_name]
+  session[:test_name] = @test_name
 
   @test = DB_POOL.with do | conn |
-    conn.exec_params("SELECT * FROM tests WHERE id=$1", [test_id]).first
+    conn.exec_params("SELECT * FROM tests WHERE name = $1", [@test_name]).first
   end
   halt 404 unless @test
+
+  test_id = @test["id"]
+  session[:test_id] = test_id
 
   @questions = DB_POOL.with do | conn |
     conn.exec_params(
@@ -1589,8 +1592,9 @@ get '/english_test/:id' do
 end
 
 # admin_create_testで作成したテストの回答を送信する処理
-post '/english_test/:id/submit' do
-  test_id = params[:id]
+post '/english_test/:test_name/submit' do
+  test_name = params[:test_name]
+  test_id = session[:test_id]
   user_id = session[:user_id]
   user_answers = params["answers"]
   @correct_count = 0

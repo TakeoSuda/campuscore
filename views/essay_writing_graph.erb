@@ -1,0 +1,58 @@
+<h1>グラフ型自由英作文添削システム</h1>
+
+<form action="/essay_writing_graph" method="post" enctype="multipart/form-data" id="input_form_graph">
+
+    <div>
+    <label for="title">⭐️提出する自由英作文の情報（どの大学の何年度？など）</label>
+    </label>
+    <input type="text" name="title" id="title_graph" placeholder="グラフ型自由英作文の情報を入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+
+    <div>
+    <label for="image_graph">⭐️グラフ英作文問題の画像（どれだけグラフの画像が鮮明かで、採点の精度が決まるので、なるべく綺麗な画像をアップロードしましょう）</label>
+    <input type="file" name="image_graph" id="image_graph" accept="image/*" required>
+    </div>
+
+    <div>
+    <label for="question">⭐️グラフ英作文の問題内容（"Describe the trends in the graph."など）</label>
+    <textarea name="question" id="question_graph" placeholder="グラフ英作文の問題内容を入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; min-height: 50px;"></textarea>
+    </div>
+
+    <div>
+    <label for="answer_graph">⭐️答案の文章</label>
+    <textarea name="answer_graph" id="answer_graph" placeholder="グラフ英作文の文章を直接入力してください" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; min-height: 100px;"></textarea>
+    </div>
+
+    <div class="submit-area">
+        <input type="submit" id="submit_btn_graph" value="グラフ型自由英作文を提出する">
+        <!-- ぐるぐるアニメーションを表示する隠しエリアを追加 -->
+        <div id="loading_spinner_graph" style="display: none; margin-top: 10px;">
+            <div class="spinner"></div>
+            <p style="color: #666; font-size: 0.9rem;">AIがあなたの英作文を解析しています。しばらくお待ちください...</p>
+        </div>
+    </div>
+</form>
+
+<br>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', () => {
+  const inputFormGraph = document.getElementById('input_form_graph');
+  const submitBtnGraph = document.getElementById('submit_btn_graph');
+  const loadingSpinnerGraph = document.getElementById('loading_spinner_graph');
+
+  if (inputFormGraph) {
+    inputFormGraph.addEventListener('submit', () => {
+      // 1. ボタンを無効化して連打を防ぐ
+      submitBtnGraph.disabled = true;
+      submitBtnGraph.style.opacity = '0.5';
+      submitBtnGraph.value = '送信中...';
+
+      // 2. ぐるぐるアニメーションとメッセージを表示
+      loadingSpinnerGraph.style.display = 'block';
+    });
+  }
+  
+});
+</script>
