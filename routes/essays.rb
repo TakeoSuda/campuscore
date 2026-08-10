@@ -142,4 +142,28 @@ end
 
 
 
+#　各ユーザーが自分の書いた英作文答案に対する、添削結果を確認する画面
+get '/my_essay_results_graph' do
+  @user_id = session[:user_id]
+
+  @results = DB_POOL.with do | conn |
+    conn.exec_params(
+    "SELECT eg.id, eg.question_graph, eg.title_graph, eg.image_graph, eg.answer_graph, 
+    eg.corrected_answer_graph, eg.score, eg.feedback, u.name AS user_name, eg.created_at, eg.human_feedback,
+    egg.mistake, egg.reason
+     FROM essays_graph eg
+     JOIN users u ON eg.user_id = u.id
+     JOIN essay_grammars_graph egg ON eg.id = egg.essay_id_graph
+     WHERE u.id = $1
+     ORDER BY eg.created_at DESC",
+    [@user_id]
+    ).to_a
+  end
+
+  @grouped_essays = @results.group_by { |row| row["id"] }
+
+  erb :my_essay_results_graph
+end
+
+
 
