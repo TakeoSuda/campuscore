@@ -22,3 +22,5 @@ gem 'google-cloud-vision'
 gem 'ruby-openai'
 gem 'connection_pool'
 
+
+gem "rackup", "~> 2.3"

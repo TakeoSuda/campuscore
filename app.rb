@@ -537,6 +537,9 @@ end
   # Booleanに変換
   @recommend_exam = recommend_exam_param == "true"
 
+  # パラメータやDBから現在のユーザー情報を取得している前提
+  current_avatar = current_user['avatar']
+
   # ユーザーのavatar画像のアップロード処理
   avatar_file = params[:avatar]
 
@@ -555,7 +558,7 @@ end
     # 新しい画像が送られてこなかった場合は、既存の値を維持する処理、
     # あるいは現在のコードの仕様通り、変更なし（または既存のURLをそのまま渡す）に調整して
     # （※もし「画像を変更しない時」にDBの値が消えてしまう場合は、params等から既存の値を引き継ぐ必要がある）
-    unique_filename = nil 
+    unique_filename = current_avatar
   end
 
   DB_POOL.with do | conn |

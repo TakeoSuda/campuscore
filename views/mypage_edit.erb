@@ -13,7 +13,13 @@
     </div>
 
     <div>
-    <label for="avatar">プロフィール画像</label>
+        <% if @user["avatar"] %>
+          <img src="<%= @user['avatar'] %>" alt="プロフィール画像" 
+          class="profile-avatar"
+          style="margin-top: 10px; max-width: 150px; max-height: 150px; border: 1px solid #ccc; border-radius: 15px; box-shadow: 0 0 10px rgba(0,0,0,0.1); object-fit: cover; transition: transform 0.3s ease;"
+          >
+        <% end %>
+    <p style="margin-top: 0px; margin-bottom: 0px;"><label for="avatar">プロフィール画像</label></p>
     <input type="file" name="avatar" id="avatar" accept="image/*">
     </div>
 
