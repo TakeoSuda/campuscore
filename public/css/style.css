@@ -555,3 +555,117 @@ span.badge {
   border-color: #FF6B6B; /* 少し濃い赤色 */
 }
 
+/* 自由英作文や英文和訳などの結果ページのCSS */
+/* --- スコアボックス --- */
+.score-box {
+  background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+  color: #ffffff;
+  text-align: center;
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.score-box div:first-child {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-bottom: 6px;
+}
+
+.score {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* --- セクションタイトル --- */
+.section-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-top: 24px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+/* --- 汎用テキストカード --- */
+.text-card {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-left: 5px solid #bdc3c7;
+  padding: 14px 16px;
+  border-radius: 6px;
+  line-height: 1.6;
+  font-size: 0.98rem;
+  white-space: pre-wrap; /* 改行を保持 */
+  word-break: break-word;
+}
+
+/* 修正案カード（緑の強調） */
+.text-card.corrected {
+  background-color: #e8f8f5;
+  border-color: #a3e4d7;
+  border-left: 5px solid #2ecc71;
+  color: #117a65;
+}
+
+/* フィードバックカード（青の強調） */
+.text-card.feedback {
+  background-color: #ebf5fb;
+  border-color: #aed6f1;
+  border-left: 5px solid #3498db;
+  color: #1b4f72;
+}
+
+/* --- 詳しい指摘箇所（リスト） --- */
+.grammar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.grammar-item {
+  background-color: #fff5f5; /* 薄い赤色背景 */
+  border: 1px solid #ffc0c0;
+  border-left: 5px solid #d32f2f; /* 少し濃い赤色の左枠線 */
+  padding: 14px 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.mistake {
+  font-weight: bold;
+  color: #d32f2f; /* 少し濃い赤色文字 */
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+}
+
+.reason {
+  color: #4a5568;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* --- 戻るボタン --- */
+.btn-back {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 32px auto 8px auto;
+  padding: 12px 0;
+  background-color: #34495e;
+  color: #ffffff;
+  text-align: center;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 25px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  box-sizing: border-box;
+}
+
+.btn-back:hover {
+  background-color: #2c3e50;
+  transform: translateY(-1px);
+}

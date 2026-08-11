@@ -1,0 +1,36 @@
+<div class="container">
+    <h1>📝 AI添削レポート</h1>
+
+    <div class="score-box">
+        <div>今回の英文和訳の完成度</div>
+        <div class="score"><%= @result["score"] %> / 100 点</div>
+    </div>
+
+    <div class="section-title">和訳した英文</div>
+    <div class="text-card"><%= @english_text %></div>
+
+    <div class="section-title">あなたの書いた和訳</div>
+    <div class="text-card"><%= @result["original_text"] %></div>
+
+    <div class="section-title">✨ おすすめの修正案</div>
+    <div class="text-card corrected"><%= @result["corrected_text"] %></div>
+
+    <div class="section-title">💡 講師からのアドバイス・講評</div>
+    <div class="text-card feedback"><%= @result["feedback"] %></div>
+
+    <div class="section-title">🔍 詳しい指摘箇所</div>
+    <% if @result["mistakes"].empty? %>
+        <div class="text-card" style="border-left: 5px solid #2ecc71;">素晴らしい！文法的なミスは特に見当たりませんでした。</div>
+    <% else %>
+        <ul class="grammar-list">
+            <% @result["mistakes"].each do |item| %>
+                <li class="grammar-item">
+                    <div class="mistake">❌ 重視・修正対象: 「<%= item["mistake_content"] %>」</div>
+                    <div class="reason"><%= item["reason"] %></div>
+                </li>
+            <% end %>
+        </ul>
+    <% end %>
+
+    <a href="/english_to_japanese_translation" class="btn-back">もう一度英文和訳を提出する</a>
+</div>
