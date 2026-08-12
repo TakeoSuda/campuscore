@@ -40,6 +40,11 @@
 
 </section>
   <section class="action-grid">
+    <a href="/materials_download" class="nav-card">
+      <div class="icon">📚</div>
+      <h3>教材をダウンロードする</h3>
+    </a>
+
     <a href="/plan_new" class="nav-card">
       <div class="icon">📅</div>
       <h3>勉強履歴・勉強計画の入力</h3>
@@ -206,6 +211,13 @@
       <a href="/create_teacher_announcement" class="nav-card accent-card">
         <div class="icon">📢</div>
         <h3>講師からのお知らせを登録</h3>
+      </a>
+      <% end %>
+
+      <% if @is_admin == true || @is_admin == 't' %>
+      <a href="/create_materials_download" class="nav-card accent-card">
+        <div class="icon">📚</div>
+        <h3>ダウンロード教材を登録</h3>
       </a>
       <% end %>
 

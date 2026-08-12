@@ -254,7 +254,7 @@ get '/users_essay_results' do
 
   raw_results = DB_POOL.with do | conn |
     conn.exec_params(
-    "SELECT e.id, e.question, e.title, e.essay_image, e.form_input_text, 
+    "SELECT e.id, e.user_id, e.question, e.title, e.essay_image, e.form_input_text, 
     e.corrected_text, e.score, e.feedback, u.name AS user_name, e.created_at, e.human_feedback,
     eg.mistake, eg.reason
      FROM essays e
@@ -264,7 +264,7 @@ get '/users_essay_results' do
     ).to_a
   end
 
-  @grouped_essays = raw_results.group_by { |row| row["id"] }
+  @grouped_essays = raw_results.group_by { |row| row["user_id"] }
 
   puts @grouped_essays
 

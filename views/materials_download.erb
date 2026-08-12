@@ -1,0 +1,11 @@
+<h1>ダウンロード教材一覧</h1>
+<ul>
+  <% @materials.each do |material| %>
+    <li>
+      <h3><%= material["title"] %></h3>
+      <p><%= material["content"] %></p>
+    </li>
+  <% end %>
+</ul>
+
+

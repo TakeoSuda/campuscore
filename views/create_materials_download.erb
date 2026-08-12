@@ -1,0 +1,26 @@
+<h1>ダウンロード教材登録画面</h1>
+<form action="/create_materials_download" method="post">
+  <div>
+    <label for="title" style="display: block; margin-bottom: 5px;">タイトル:</label>
+    <input type="text" id="title" name="title" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+  </div>
+
+  <div>
+    <label for="content" style="display: block; margin-bottom: 5px;">内容:</label>
+    <textarea id="content" name="content" rows="5" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+  </div>
+
+  <div class="submit-area">
+    <input type="submit" value="ダウンロード教材を登録する">
+  </div>
+</form>
+
+<h2>既存のダウンロード教材一覧</h2>
+<ul>
+  <% @materials.each do |material| %>
+    <li>
+      <h3><%= material["title"] %></h3>
+      <p><%= material["content"] %></p>
+    </li>
+  <% end %>
+</ul>

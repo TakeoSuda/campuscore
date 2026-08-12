@@ -2312,3 +2312,63 @@ post '/create_teacher_announcement' do
   redirect '/create_teacher_announcement'
 end
 
+# 授業プリントダウンロードページ
+
+get '/create_materials_download' do
+  @user_id = session[:user_id]
+
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  end
+  halt 404 unless current_user
+  if current_user["is_admin"].to_s != 't'
+    redirect '/'
+  end
+
+  @materials = DB_POOL.with do | conn |
+    conn.exec_params(
+    "SELECT * FROM materials_for_download ORDER BY created_at DESC"
+    ).to_a
+  end
+
+  erb :create_materials_download
+end
+
+
+post '/create_materials_download' do
+  @user_id = session[:user_id]
+  title = params[:title]
+  content = params[:content]
+
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [@user_id]).first
+  end
+  halt 404 unless current_user
+  if current_user["is_admin"].to_s != 't'
+    redirect '/'
+  end
+
+  # ダウンロード教材をデータベースに保存
+  DB_POOL.with do | conn |
+    conn.exec_params(
+    "INSERT INTO materials_for_download (title, content) VALUES ($1, $2)",
+    [title, content]
+    )
+  end
+
+  session[:success] = "ダウンロード教材を登録しました。"
+  redirect '/create_materials_download'
+end
+
+get '/materials_download' do
+  @user_id = session[:user_id]
+
+  @materials = DB_POOL.with do | conn |
+    conn.exec_params(
+    "SELECT * FROM materials_for_download ORDER BY created_at DESC"
+    ).to_a
+  end
+
+  erb :materials_download
+end
+
