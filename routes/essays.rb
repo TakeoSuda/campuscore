@@ -254,19 +254,45 @@ get '/users_essay_results' do
 
   raw_results = DB_POOL.with do | conn |
     conn.exec_params(
-    "SELECT e.id, e.user_id, e.question, e.title, e.essay_image, e.form_input_text, 
-    e.corrected_text, e.score, e.feedback, u.name AS user_name, e.created_at, e.human_feedback,
-    eg.mistake, eg.reason
+    "SELECT e.id, user_id, eg.mistake
      FROM essays e
-     JOIN users u ON e.user_id = u.id
-     JOIN essay_grammars eg ON e.id = eg.essay_id
-     ORDER BY e.created_at DESC"
+     LEFT JOIN essay_grammars eg ON e.id = eg.essay_id"
     ).to_a
   end
 
-  @grouped_essays = raw_results.group_by { |row| row["user_id"] }
+puts "====== raw_results ======"
+puts raw_results
 
-  puts @grouped_essays
+puts "====== essay_ids ======"
+
+essay_ids = raw_results.group_by { | row | row["user_id"] }
+
+puts essay_ids
+
+@result = essay_ids.transform_values do | essays |
+  essays.group_by { | row | row["id"] }
+
+end
+
+puts "====== @result ======"
+puts @result
+
+
+  # raw_results = DB_POOL.with do | conn |
+  #   conn.exec_params(
+  #   "SELECT e.id, e.user_id, e.question, e.title, e.essay_image, e.form_input_text, 
+  #   e.corrected_text, e.score, e.feedback, u.name AS user_name, e.created_at, e.human_feedback,
+  #   eg.mistake, eg.reason
+  #    FROM essays e
+  #    JOIN users u ON e.user_id = u.id
+  #    JOIN essay_grammars eg ON e.id = eg.essay_id
+  #    ORDER BY e.created_at DESC"
+  #   ).to_a
+  # end
+
+  # @grouped_essays = raw_results.group_by { |row| row["user_id"] }
+
+  # puts @grouped_essays
 
 
   erb :users_essay_results
