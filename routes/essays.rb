@@ -244,6 +244,64 @@ end
 
 
 # 全ユーザーの自由英作文の答案と添削結果を一覧表示する画面
+ 
+# 自由英作文を提出したユーザーの一覧を表示する画面
+get '/users_essay_list' do
+  # 管理者かどうかのチェック
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
+  halt 404 unless current_user
+  redirect '/' unless current_user["is_admin"].to_s == 't'
+
+  @users = DB_POOL.with do | conn |
+    conn.exec_params(
+    "SELECT DISTINCT u.id, u.name, u.email, u.created_at
+     FROM users u
+     JOIN essays e ON u.id = e.user_id
+     ORDER BY u.id ASC"
+    ).to_a
+  end
+
+  erb :users_essay_list
+end
+
+# （管理者用）各ユーザーの自由英作文の答案と添削結果を一覧表示する画面
+get '/users_essay_results/:id' do
+  # 管理者かどうかのチェック
+  current_user = DB_POOL.with do | conn |
+    conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
+  end
+
+  halt 404 unless current_user
+  redirect '/' unless current_user["is_admin"].to_s == 't'
+
+  raw_results = DB_POOL.with do | conn |
+    conn.exec_params(
+    "SELECT e.id, user_id, eg.mistake, eg.reason, u.name AS user_name, e.form_input_text, e.corrected_text, e.score, e.feedback, e.question, e.title, e.created_at
+     FROM essays e
+     JOIN users u ON e.user_id = u.id
+     LEFT JOIN essay_grammars eg ON e.id = eg.essay_id
+     WHERE user_id = $1
+     ORDER BY e.created_at DESC",
+     [session[:user_id]]
+    ).to_a
+  end
+
+  essay_ids = raw_results.group_by { | row | row["user_id"] }
+
+  @result = essay_ids.transform_values do | essays |
+    essays.group_by { | row | row["id"] }
+  end
+
+  erb :users_essay_results_each_user
+
+
+
+
+end
+
+
 get '/users_essay_results' do
   # 管理者かどうかのチェック
   current_user = DB_POOL.with do | conn |

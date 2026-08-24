@@ -1,0 +1,32 @@
+<h1>各ユーザーの自由英作文の添削結果</h1>
+
+<% @result.each do |user_id, essays| %>
+  <div>
+    <h1>ユーザーID: <%= user_id %></h1>
+    <h1>ユーザー名: <%= essays.values.first.first['user_name'] %></h1>
+
+    <% essays.each do |essay_id, mistakes| %>
+      <h2><strong>添削結果ID:</strong> <%= essay_id %></h2>
+      <p><strong>質問:</strong> <%= mistakes.first['question'] %></p>
+      <p><strong>タイトル:</strong> <%= mistakes.first['title'] %></p>
+      <p><strong>元の文章:</strong> <%= mistakes.first['form_input_text'] %></p>
+      <p><strong>修正後の文章:</strong> <%= mistakes.first['corrected_text'] %></p>
+      <p><strong>スコア:</strong> <%= mistakes.first['score'] %></p>
+      <p><strong>フィードバック:</strong> <%= mistakes.first['feedback'] %></p>
+
+      <% mistakes.each do | mistake | %>
+        <% if mistake["mistake"] %>
+        <p><strong>ミス:</strong> <%= mistake['mistake'] %></p>
+        <p><strong>理由:</strong> <%= mistake['reason'] %></p>
+        <% else %>
+        <p><strong>ミス:</strong><em> なし</em></p>
+        <% end %>
+      <% end %>
+
+      <hr style="border: 1px solid #ccc; margin: 20px 0;">
+    <% end %>
+
+
+  </div>
+  <hr style="border: 1px solid #ccc; margin: 20px 0;">
+<% end %>

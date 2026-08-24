@@ -1,0 +1,13 @@
+<h1>自由英作文を提出したユーザーの一覧</h1>
+<ul>
+  <% @users.each do |user| %>
+    <li>
+      <a href="/users_essay_results/<%= user['id'] %>">
+      <strong><%= user['name'] %></strong>
+      <strong>ユーザーID:</strong> <%= user['id'] %>
+        </a>
+    </li>
+  <% end %>
+</ul>
+
+
