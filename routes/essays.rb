@@ -273,6 +273,8 @@ get '/users_essay_results/:id' do
     conn.exec_params("SELECT * FROM users WHERE id=$1", [session[:user_id]]).first
   end
 
+  user_id = params[:id].to_i
+
   halt 404 unless current_user
   redirect '/' unless current_user["is_admin"].to_s == 't'
 
@@ -284,7 +286,7 @@ get '/users_essay_results/:id' do
      LEFT JOIN essay_grammars eg ON e.id = eg.essay_id
      WHERE user_id = $1
      ORDER BY e.created_at DESC",
-     [session[:user_id]]
+     [user_id]
     ).to_a
   end
 
@@ -295,9 +297,6 @@ get '/users_essay_results/:id' do
   end
 
   erb :users_essay_results_each_user
-
-
-
 
 end
 
