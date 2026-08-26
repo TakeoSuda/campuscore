@@ -328,57 +328,50 @@ get '/users_info/:id' do
     
   target_id = params[:id]
 
-  # 特定のユーザー1人分だけをJOINで取得
-  raw_data = DB_POOL.with do | conn |
-    conn.exec_params("
-    SELECT users.*, 
-           plans.subject AS p_subject, plans.material AS p_material, plans.status AS p_status, plans.start_date AS p_start_date, plans.end_date AS p_end_date,
-           diary_entries.content AS d_content, diary_entries.date AS d_date,
-           consults.content AS c_content, consults.date AS c_date,
-           instructions.content AS i_content, instructions.created_at AS i_created_at, instructions.category AS i_category,
-           instruction_replies.content AS ir_content, instruction_replies.created_at AS ir_created_at, instruction_replies.user_id AS ir_user_id,
-          mock_exams.title AS me_title, mock_exams.exam_type AS me_exam_type, mock_exams.english_r AS me_english_r, mock_exams.english_l AS me_english_l, 
-          mock_exams.math_1a AS me_math_1a, mock_exams.math_2bc AS me_math_2bc, mock_exams.japanese AS me_japanese, mock_exams.physics_basic AS me_physics_basic, 
-          mock_exams.chemistry_basic AS me_chemistry_basic, mock_exams.biology_basic AS me_biology_basic, mock_exams.earth_science_basic AS me_earth_science_basic, 
-          mock_exams.physics AS me_physics, mock_exams.chemistry AS me_chemistry, mock_exams.biology AS me_biology, mock_exams.earth_science AS me_earth_science, 
-          mock_exams.world_history AS me_world_history, mock_exams.japanese_history AS me_japanese_history, mock_exams.geography AS me_geography, mock_exams.civics_ethics AS me_civics_ethics, 
-          mock_exams.civics_politics AS me_civics_politics, mock_exams.geography_basic AS me_geography_basic, mock_exams.history_basic AS me_history_basic, 
-          mock_exams.civics_basic AS me_civics_basic, mock_exams.informatics AS me_informatics, mock_exams.taken_at AS me_taken_at, mock_exams.mock_exam_result_image_url AS me_mock_exam_result_image_url
-    FROM users 
-    LEFT JOIN plans ON users.id = plans.user_id 
-    LEFT JOIN diary_entries ON users.id = diary_entries.user_id 
-    LEFT JOIN consults ON users.id = consults.user_id
-    LEFT JOIN instructions ON users.id = instructions.user_id OR instructions.user_id IS NULL
-    LEFT JOIN instruction_replies ON instructions.id = instruction_replies.instruction_id
-    LEFT JOIN mock_exams ON users.id = mock_exams.user_id
-    WHERE users.id = $1
-  ", [target_id]).to_a
+  # 特定のユーザー1人の基本情報を取得
+  @user = DB_POOL.with do |conn|
+    conn.exec_params("SELECT * FROM users WHERE id = $1", [target_id]).first
+  end
+  halt 404 unless @user
+
+  # 3. 関連データを個別に取得（重複が発生しないためメモリに優しい）
+  DB_POOL.with do |conn|
+    # 計画
+    @user['plans'] = conn.exec_params(
+      "SELECT subject, material, status, start_date, end_date FROM plans WHERE user_id = $1", 
+      [target_id]
+    ).to_a
+
+    # 日記
+    @user['diaries'] = conn.exec_params(
+      "SELECT content, date FROM diary_entries WHERE user_id = $1 ORDER BY date DESC", 
+      [target_id]
+    ).to_a
+
+    # 相談
+    @user['consults'] = conn.exec_params(
+      "SELECT content, date FROM consults WHERE user_id = $1 ORDER BY date DESC", 
+      [target_id]
+    ).to_a
+
+    # 指導メッセージ（返信も別取得かJOINで最小限に）
+    @user['instructions'] = conn.exec_params(
+      "SELECT instructions.content, instructions.category, instructions.created_at,
+              instruction_replies.content AS reply_content, instruction_replies.created_at AS reply_created_at, instruction_replies.user_id AS ir_user_id
+       FROM instructions
+       LEFT JOIN instruction_replies ON instructions.id = instruction_replies.instruction_id
+       WHERE instructions.user_id = $1 OR instructions.user_id IS NULL
+       ORDER BY instructions.created_at DESC", 
+      [target_id]
+    ).to_a
+
+    # 模試結果
+    @user['mock_exams'] = conn.exec_params(
+      "SELECT * FROM mock_exams WHERE user_id = $1 ORDER BY taken_at DESC", 
+      [target_id]
+    ).to_a
   end
 
-  halt 404 if raw_data.empty?
-
-  # 1人分のデータを整理（前のロジックを活用）
-  user_data = raw_data.first.merge({ 'plans' => [], 'diaries' => [], 'consults' => [], 'instructions' => [], 'mock_exams' => [] })
-  
-  raw_data.each do |row|
-    user_data['plans'] << { 'subject' => row['p_subject'], 'material' => row['p_material'], 'status' => row['p_status'], 'start_date' => row['p_start_date'], 'end_date' => row['p_end_date'] }
-    user_data['diaries'] << { 'content' => row['d_content'], 'date' => row['d_date'] } if row['d_content']
-    user_data['consults'] << { 'content' => row['c_content'], 'date' => row['c_date'] } if row['c_content']
-    user_data['instructions'] << { 'content' => row['i_content'], 'category' => row['i_category'], 'created_at' => row['i_created_at'], 'reply_content' => row['ir_content'], 'reply_created_at' => row['ir_created_at'], 'ir_user_id' => row['ir_user_id'] } if row['i_content']
-    user_data['mock_exams'] << { 'title' => row['me_title'], 'exam_type' => row['me_exam_type'], 'english_r' => row['me_english_r'], 'english_l' => row['me_english_l'], 'math_1a' => row['me_math_1a'], 'math_2bc' => row['me_math_2bc'], 
-    'japanese' => row['me_japanese'], 'physics_basic' => row['me_physics_basic'], 'chemistry_basic' => row['me_chemistry_basic'], 'biology_basic' => row['me_biology_basic'], 'earth_science_basic' => row['me_earth_science_basic'], 'physics' => row['me_physics'], 
-    'chemistry' => row['me_chemistry'], 'biology' => row['me_biology'], 'earth_science' => row['me_earth_science'], 'world_history' => row['me_world_history'], 'japanese_history' => row['me_japanese_history'], 'geography' => row['me_geography'], 'civics_ethics' => row['me_civics_ethics'], 
-    'civics_politics' => row['me_civics_politics'], 'geography_basic' => row['me_geography_basic'], 'history_basic' => row['me_history_basic'], 'civics_basic' => row['me_civics_basic'], 'informatics' => row['me_informatics'], 'taken_at' => row['me_taken_at'], 'mock_exam_result_image_url' => row['me_mock_exam_result_image_url']}
-  end
-
-
-  # 重複削除
-  user_data['plans'].uniq!; user_data['diaries'].uniq!; user_data['consults'].uniq!; user_data['instructions'].uniq!; user_data['mock_exams'].uniq!
-  user_data['diaries'].sort_by! { |d| d['date'] }.reverse! if user_data['diaries']
-  user_data['consults'].sort_by! { |c| c['date'] }.reverse! if user_data['consults']
-  user_data['instructions'].sort_by! { |i| i['created_at'] }.reverse! if user_data['instructions']
-  user_data['mock_exams'].sort_by! { |m| m['taken_at'] }.reverse! if user_data['mock_exams']
-  @user = user_data
   erb :user_detail # 新しいViewファイル
 end
 
