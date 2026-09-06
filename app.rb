@@ -195,14 +195,18 @@ post "/signup" do
   @school = params[:school]
   @grade = params[:grade]
 
-  @result = DB_POOL.with do |conn|
-    conn.exec_params("SELECT email FROM users WHERE email = $1", [params[:email]])
-  end
-  if @result.first
-    @error = "そのメールアドレスは既に使用されています"
-    @result.clear # 使い終わったらクリア
-    return erb :signup
-  end
+  # SELECTの実行結果の件数（ntuples）でチェックする
+    user_exists = DB_POOL.with do |conn|
+      result = conn.exec_params("SELECT 1 FROM users WHERE email = $1", [params[:email]])
+      exists = result.ntuples > 0 # 件数が 1 件以上あれば true
+      result.clear
+      exists
+    end
+
+    if user_exists
+      @error = "そのメールアドレスは既に使用されています"
+      return erb :signup
+    end
 
   @email = params[:email]
   
